@@ -1,0 +1,244 @@
+SI=$(printf '\017')
+FS=$(printf '\034')
+GS=$(printf '\035')
+RS=$(printf '\036')
+US=$(printf '\037')
+eval "FS=\"\${FS:-$SI}\""
+noglob=false
+[ "$(echo /.*)" = '*' ] && noglob=true
+
+alias for_line='_OFS=$IFS; IFS="
+"; for'
+alias do_line='do IFS=$_OFS;'
+alias for_array='_OFS=$IFS; IFS=$FS; for'
+alias for_si_array='_OFS=$IFS; IFS=$SI; for'
+alias for_fs_array='_OFS=$IFS; IFS=$FS; for'
+alias for_gs_array='_OFS=$IFS; IFS=$GS; for'
+alias for_rs_array='_OFS=$IFS; IFS=$RS; for'
+alias for_us_array='_OFS=$IFS; IFS=$US; for'
+alias do_array='do IFS=$_OFS;'
+if
+
+alias ^=brace
+
+brace() {
+  local t=`_brace "$@" | tr '[\n]' '[ ]'`
+  echo ${t% }
+}
+
+_brace() {
+  local t i j n m k
+  case $1
+  in '{'*'}')
+    split "$1" '{}'
+    idx "$RET" 1
+    var t split "$RET" , $US
+    shift
+  ;; *?*)
+    t=$1
+    shift
+  ;; '')
+    echo
+    return
+  esac
+
+  _brace "$@" | while IFS= read -r j; do
+    for_us_array i in $t; do_array
+      if echo "$i" | grep -E '^[0-9]+\.\.[0-9]+(\.\.[0-9]+)?$' >/dev/null; then
+        splitn "$i" .. " "
+        seq $RET | sed "s/\$/$j/"
+      else
+        echo "$i$j"
+      fi
+    done
+  done
+}
+  
+hash() {
+  case $1 in *[!_a-zA-Z0-9]*) return 1;; esac
+  eval "$1='$2'"
+}
+
+hashl() {
+  case $1 in *[!_a-zA-Z0-9]*) return 1;; esac
+  eval "local $1='$2'"
+}
+
+get() {
+  case $1 in *[!_a-zA-Z0-9]*) return 1;; esac
+  eval "RET=\"\$$1\""
+} 
+
+print_key() {
+  set | grep "^$1[^=]*=" | sed "s/^$1[^=]*=//"
+}
+
+substr() {
+  local t= str=$1 n=$2 m=${#1} l=$3
+  if [ -z "$l" ]
+    then l=0
+    else l=$((m-n-l))
+  fi
+  while [ $n -gt 0 ]; do
+    t=${t}?
+    n=$((n-1))
+  done
+  eval "str=\"\${str#$t}\""
+  t=
+  while [ $l -gt 0 ]; do
+    t=${t}?
+    l=$((l-1))
+  done
+  eval "RET=\"\${str%$t}\""
+}
+
+piper() {
+  local f=$(mktemp -d)/p
+  mkfifo $f
+  echo $f
+  
+  exec >&-
+  {
+    eval "$@" > $f
+    rm -f $f
+  } &
+}
+
+pipew() {
+  local f=$(mktemp -d)/p
+  mkfifo $f
+  echo $f
+  
+  exec >&-
+  {
+    eval "$@" < $f
+    rm -f $f
+  } &
+}
+
+var() {
+  case $1 in *[!_a-zA-Z0-9]*) return 1;; esac
+  local VAR=$1
+  shift
+  "$@"
+  eval "$VAR='$RET'"
+}
+
+array() {
+  set -f
+  set -- "$@"
+  local IFS="$FS"
+  RET="$*$IFS"
+  $noglob || set +f
+}
+
+unarray() {
+  set -f
+  local IFS="$FS"
+  set -- $@
+  IFS=' '
+  RET="$*"
+  $noglob || set +f
+}
+
+range() {
+  local IFS="$FS" i=$2 n=$3
+  set -f
+  set -- $1
+  shift $i
+  RET=
+  while [ "$n" -ge 1 ]; do
+    RET=$RET$1$FS
+    n=$((n-1))
+    shift
+  done
+  $noglob || set +f
+}
+
+idx() {
+  local IFS="$FS" i=$2 n=1
+  set -f
+  set -- $1
+  shift $i
+  RET=$1
+  $noglob || set +f
+}
+
+len() {
+  local IFS=$FS
+  set -f
+  set -- $1
+  RET=$#
+  $noglob || set +f
+}
+  
+split() {
+  local IFS="$2"
+  set -f
+  set -- $1$2
+  IFS="$FS"
+  RET="$*$IFS"
+  $noglob || set +f
+}
+
+splitn() {
+  replace "$1" "$2" "$FS"
+  RET="$RET$FS"
+}
+
+replace() {
+  local t= v=$1 s=$2 d=$3
+  set -f
+  set --
+
+  while [ "$t" != "$v" ]; do
+    eval "t=\"\${v%%$s*}\""
+    set -- "$@" "$t"
+    eval "v=\"\${v#*$s}\""
+  done
+
+  [ $# -eq 0 ] && {
+    RET=$t
+    return 0
+  }
+
+  t=
+  for v in "$@"; do
+    t="$t$v$d"
+  done
+
+  eval "RET=\"\${t%%$d}\""
+  $noglob || set +f
+}
+
+read_array() {
+  local j IFS="$FS" a=$2
+  shift 2
+  for j in $a; do
+    case $1 in *[!_a-zA-Z0-9]*) return 1; esac
+    eval "$1='$j'"
+    shift
+  done
+}
+
+map() {
+  local i a
+  eval "_LAMBDA() $1"
+  shift
+  for_array i in $@; do_array
+    _LAMBDA "$i"
+    a="$a$RET$FS"
+  done
+  RET="$a"
+}
+
+foldl() {
+  local i a
+  eval "_LAMBDA() $1"
+  a=$2
+  shift 2
+  for_array i in $@; do_array
+    _LAMBDA "$a" "$i"
+    a="$RET"
+  done
+}  
