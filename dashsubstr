@@ -1,0 +1,28 @@
+#!/bin/sh
+
+if ! type return_val >/dev/null 2>&1; then
+  alias return_val='echo'
+fi
+
+substr() {
+  local t= str n=$2 m=${#1} l=$3
+  if [ "$2" -ge "$m" ]; then
+    return_val ""
+    return
+  fi
+  if [ -z "$3" ]
+    then l=0
+    else l=$((m-n-l))
+  fi
+  while [ $n -gt 0 ]; do
+    t=${t}?
+    n=$((n-1))
+  done
+  eval "str=\"\${1#$t}\""
+  t=
+  while [ $l -gt 0 ]; do
+    t=${t}?
+    l=$((l-1))
+  done
+  eval "return_val \"\${str%$t}\""
+}

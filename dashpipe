@@ -1,0 +1,38 @@
+#!/bin/sh
+
+. ./dashrand
+
+FIFODIR=/dev/shm
+
+tmp_fifo() {
+  local x
+  readrand x
+
+  while ! (umask 0077; mkfifo "$FIFODIR/tmp.$x"); do
+    readrand x
+  done
+
+  echo "$FIFODIR/tmp.$x"
+}
+
+piper() {
+  local f=$(tmp_fifo)
+  echo $f
+  
+  exec >&-
+  {
+    eval "$@" > $f
+    rm -f $f
+  } &
+}
+
+pipew() {
+  local f=$(tmp_fifo)
+  echo $f
+  
+  exec >&-
+  {
+    eval "$@" < $f
+    rm -f $f
+  } &
+}

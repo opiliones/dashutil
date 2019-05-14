@@ -1,0 +1,91 @@
+SI=$(printf '\017')
+FS=$(printf '\034')
+GS=$(printf '\035')
+RS=$(printf '\036')
+US=$(printf '\037')
+eval "AFS=\"\${AFS:-$SI}\""
+
+if [ "$(echo /.*)" = '/.*' ]; then
+  alias restore_fopt='set -f'
+else
+  alias restore_fopt='set +f'
+fi
+
+alias for_array='set -f; _OFS=$IFS; IFS='$AFS'; for'
+alias for_si_array='set -f; _OFS=$IFS; IFS='$SI'; for'
+alias for_fs_array='set -f; _OFS=$IFS; IFS='$FS'; for'
+alias for_gs_array='set -f; _OFS=$IFS; IFS='$GS'; for'
+alias for_rs_array='set -f; _OFS=$IFS; IFS='$RS'; for'
+alias for_us_array='set -f; _OFS=$IFS; IFS='$US'; for'
+alias do_array='do IFS=$_OFS; restore_fopt;'
+
+if ! type return_val >/dev/null 2>&1; then
+  alias return_val='echo'
+fi
+
+array() {
+  set -f
+  set -- "$@"
+  local IFS="$AFS"
+  return_val "$*$IFS"
+  restore_fopt
+}
+
+unarray() {
+  set -f
+  local IFS="$AFS"
+  set -- $@
+  IFS=' '
+  return_val "$*"
+  restore_fopt
+}
+
+len() {
+  local IFS=$AFS
+  set -f
+  set -- $1
+  return_val $#
+  restore_fopt
+}
+
+read_array() {
+  local j IFS="$AFS" a=$2
+  shift 2
+  for j in $a; do
+    case $1 in *[!_a-zA-Z0-9]*) return 1; esac
+    eval "$1='$j'"
+    shift
+  done
+}
+
+range() {
+  local IFS="$AFS" i=$2 n=$3 t=
+  set -f
+  set -- $1
+  shift $i
+  while [ "$n" -ge 1 ]; do
+    t="$t$1$AFS"
+    n=$((n-1))
+    shift
+  done
+  return_val "$t"
+  restore_fopt
+}
+
+idx() {
+  local IFS="$AFS" i=$2 n=1
+  set -f
+  set -- $1
+  shift $i
+  return_val "$1"
+  restore_fopt
+}
+
+splt() {
+  local IFS="$2"
+  set -f
+  set -- $1$IFS
+  IFS="$AFS"
+  return_val "$*$IFS"
+  restore_fopt
+}
