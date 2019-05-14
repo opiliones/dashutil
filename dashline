@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$(echo /.*)" = '*' ]; then
+if [ "$(echo /.*)" = '/.*' ]; then
   alias restore_fopt='set -f'
 else
   alias restore_fopt='set +f'
