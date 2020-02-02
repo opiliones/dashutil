@@ -4,20 +4,20 @@ dashを少しだけ便利にするutility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### rdcmd COMMAND...
+### tmpfifo COMMAND \[ARG\]...
 
 bashのプロセス置換(read)に対応するコマンド。
 
 ```
-$ diff $(rdcmd echo a) $(rdcmd echo b)
+$ diff $(tmpfifo echo a) $(tmpfifo echo b)
 > a
 < b
 ```
-### qee COMMAND...
+### qee COMMAND \[ARG\]...
 
 bashのプロセス置換(write)に対応するコマンド。
 moreutilのpeeの1コマンド版。
-
+ \[ARG\]
 ```
 $ echo a | qee grep a | tr a b
 a
@@ -45,7 +45,7 @@ $ pipe 'exit 1' 'exit 2' true; echo $?
 
 ## リソース管理用のコマンド
 
-### defer COMMAND...
+### defer COMMAND \[ARG\]...
 
 シグナルトラップを追加する。
 
@@ -55,7 +55,7 @@ $ ls file
 ls: cannot access 'file': No such file or directory
 ```
 
-### tmpf COMMAND...
+### tmpf COMMAND \[ARG\]...
 
 一時ファイルを作って引数に渡してコマンドを実行する。
 
@@ -70,12 +70,12 @@ a
 
 - data VARIABLE \[KEY VALUE\]...
 - data DATA set KEY VALUE \[KEY VALUE\]...
-- data DATA get KEY\[,KEY\]... COMMAND...
-- data DATA get-default KEY VALUE COMMAND...
+- data DATA get KEY\[,KEY\]... COMMAND \[ARG\]...
+- data DATA get-default KEY VALUE COMMAND \[ARG\]...
 - data DATA exists KEY...
-- data DATA values COMMAND...
-- data DATA keys COMMAND...
-- data DATA pairs COMMAND...
+- data DATA values COMMAND \[ARG\]...
+- data DATA keys COMMAND \[ARG\]...
+- data DATA pairs COMMAND \[ARG\]...
 - data DATA rm [KEY]...
 
 ```
@@ -119,7 +119,7 @@ $ eval $foge
 |
 ```
 
-### rot COMMAND...
+### rot COMMAND \[ARG\]...
 
 最後の引数を最初の引数に持ってくる。
 
@@ -128,7 +128,7 @@ $ rot echo 1 2 3
 3 1 2
 ```
 
-### rotn NUMBER COMMAND...
+### rotn NUMBER COMMAND \[ARG\]...
 
 NUMBER分末尾の引数を最初の引数に持ってくる。
 
@@ -137,7 +137,7 @@ $ rotn 2 echo 1 2 3
 3 2 1
 ```
 
-### cutin NUMBER COMMAND...
+### cutin NUMBER COMMAND \[ARG\]...
 
 最後の引数をNUMBERの引数に持ってくる。
 
@@ -148,7 +148,7 @@ $ cutin 2 echo 1 2 3
 
 ## その他
 
-### null COMMAND...
+### null COMMAND \[ARG\]...
 
 出力をすべて捨てる。
 
@@ -158,7 +158,7 @@ $ null eco a
 $
 ```
 
-### exists VARIABLE
+### exists VARIABLE...
 
 変数が存在かどうかを復帰値で返す。
 
