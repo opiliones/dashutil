@@ -39,9 +39,15 @@ $ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
 $ pipe 'exit 1' 'exit 2' true; echo $?
 2
 ```
-### either
+### either系
 
-### maybe
+#### 
+戻り値が0なら標準入力を、戻り値が0以外ならエラー出力を標準出力に出す。
+
+
+### maybe系
+
+
 
 ## リソース管理用のコマンド
 
@@ -147,6 +153,10 @@ $ cutin 2 echo 1 2 3
 ```
 
 ## その他
+
+### ifany COMMAND \[ARG\]...
+
+moreutilのifneと同じ。
 
 ### null COMMAND \[ARG\]...
 
