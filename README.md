@@ -135,9 +135,9 @@ printfの%qに対応するコマンド。
 ```
 $ quote 'a b' "' '"
 'a b' \'' '\'
-$ quote -v foge 'echo "|"'
-$ eval $foge
-|
+$ quote -v foge '" " "a b"'
+$ eval "printf '%s, ' $hoge"
+ , a b
 ```
 
 ### rot COMMAND \[ARG\]...
