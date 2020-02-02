@@ -39,15 +39,28 @@ $ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
 $ pipe 'exit 1' 'exit 2' true; echo $?
 2
 ```
+
 ### either系
 
-#### 
-戻り値が0なら標準入力を、戻り値が0以外ならエラー出力を標準出力に出す。
+#### either COMMAND \[ARG\]... | fmap COMMAND \[ARG\]... | fmap ... | unlift
+すべてのコマンドが成功する場合は最後のコマンドの標準出力を出力する。
+そうでない場合は異常復帰した最も右側のコマンドの戻り値とエラー出力を出力する。
 
+#### context VARIABLE...
+unliftの代わりに使うと、unliftの戻り値に相当する値をVARIABLEに代入する。
+代入が失敗すると1で返る。
 
-### maybe系
+```
+$ either echo a | fmap a | { context ret
+> case $ret
+> in 0) cat -
+> ;; *) echo "ERROR: command failed, ecode=$?, msg=$(cat)"
+> esac; }
+ERROR: command failed, ecode=127, msg=a: コマンドが見つかりません
+```
 
-
+#### noop COMMAND \[ARG\]...
+fmapの代わりに使用するとCOMMANDの復帰地にかかわらず、0で復帰したものとして動作する。
 
 ## リソース管理用のコマンド
 
@@ -170,7 +183,7 @@ $
 
 ### exists VARIABLE...
 
-変数が存在かどうかを復帰値で返す。
+変数が存在するかどうかを復帰値で返す。
 
 ```
 $ exists a && echo $a
