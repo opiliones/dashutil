@@ -40,7 +40,7 @@ $ pipe 'exit 1' 'exit 2' true; echo $?
 2
 ```
 
-### either系
+### either
 
 #### either COMMAND \[ARG\]... | fmap COMMAND \[ARG\]... | fmap ... | unlift
 すべてのコマンドが成功する場合は最後のコマンドの標準出力を出力する。
