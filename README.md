@@ -2,7 +2,9 @@
 
 dashを少しだけ便利にするutility
 
-## rdcmd COMMAND...
+## 一時ファイルを作りたくない人向けのコマンド
+
+### rdcmd COMMAND...
 
 bashのプロセス置換(read)に対応するコマンド。
 
@@ -11,7 +13,7 @@ $ diff $(rdcmd echo a) $(rdcmd echo b)
 > a
 < b
 ```
-## qee COMMAND...
+### qee COMMAND...
 
 bashのプロセス置換(write)に対応するコマンド。
 moreutilのpeeの1コマンド版。
@@ -22,7 +24,7 @@ a
 b
 ```
 
-## pipe \[-r|-l|-a VARIABLE\] QUOTED...
+### pipe \[-r|-l|-a VARIABLE\] QUOTED...
 
 パイプの復帰値のポリシーを変更する。
 
@@ -37,20 +39,11 @@ $ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
 $ pipe 'exit 1' 'exit 2' true; echo $?
 2
 ```
+### either
 
-## quote \[-v VARIABLE\] STRING...
+## リソース管理用のコマンド
 
-printfの%qに対応するコマンド。
-
-```
-$ quote 'a b' "' '"
-'a b' \'' '\'
-$ quote -v foge 'echo "|"'
-$ eval $foge
-|
-```
-
-## defer COMMAND...
+### defer COMMAND...
 
 シグナルトラップを追加する。
 
@@ -60,7 +53,7 @@ $ ls file
 ls: cannot access 'file': No such file or directory
 ```
 
-## tmpf COMMAND...
+### tmpf COMMAND...
 
 一時ファイルを作ってコマンドを実行する。
 
@@ -69,7 +62,9 @@ $ tmpf fval 'echo a > $1; cat $1'
 a
 ```
 
-## data
+## 疑似データ構造
+
+### data
 data VARIABLE \[= \[KEY VALUE\]...\]
 data DATA set KEY VALUE
 data DATA get KEY COMMAND...
@@ -98,17 +93,34 @@ apple 1
 orange 2
 ```
 
-## rot COMMAND...
+## 上記のコマンドと組み合わせるためのコマンド
 
-## rotn NUMBER COMMAND...
+### fval QUATE \[ARG\]...
 
-## cutin NUMBER COMMAND...
+### quote \[-v VARIABLE\] STRING...
 
-## fval QUATE \[ARG\]...
+printfの%qに対応するコマンド。
 
-## exists
+```
+$ quote 'a b' "' '"
+'a b' \'' '\'
+$ quote -v foge 'echo "|"'
+$ eval $foge
+|
+```
 
-## either
+### rot COMMAND...
+
+### rotn NUMBER COMMAND...
+
+### cutin NUMBER COMMAND...
+
+## その他
+
+### null COMMAND...
+
+### exists VARIABLE
+
 
 
 
