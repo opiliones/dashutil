@@ -171,6 +171,7 @@ $ cutin 2 echo 1 2 3
 
 ### ifany COMMAND \[ARG\]...
 
+標準入力がない場合はCOMMANDを実行しない。
 moreutilのifneと同じ。
 
 ### null COMMAND \[ARG\]...
