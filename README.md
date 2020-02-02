@@ -70,9 +70,10 @@ fmapの代わりに使用するとCOMMANDの復帰地にかかわらず、0で�
 シグナルトラップを追加する。
 
 ```
-$ (touch file; defer rm file)
-$ ls file
+$ (touch file; defer rm file; touch file2; defer rm file2)
+$ ls file file2
 ls: cannot access 'file': No such file or directory
+ls: cannot access 'file2': No such file or directory
 ```
 
 ### tmpf COMMAND \[ARG\]...
