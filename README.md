@@ -45,6 +45,7 @@ $ pipe 'exit 1' 'exit 2' true; echo $?
 #### either COMMAND \[ARG\]... | fmap COMMAND \[ARG\]... | fmap ... | unlift
 すべてのコマンドが成功する場合は最後のコマンドの標準出力を出力する。
 そうでない場合は異常復帰した最も右側のコマンドの戻り値とエラー出力を出力する。
+パイプの途中でコマンドが失敗した場合、それよりも右のCOMMANDは実行されない。
 
 #### context VARIABLE...
 unliftの代わりに使うと、unliftの戻り値に相当する値をVARIABLEに代入する。
