@@ -4,12 +4,12 @@ dashを少しだけ便利にするutility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### tmpfifo COMMAND \[ARG\]...
+### readp COMMAND \[ARG\]...
 
 bashのプロセス置換(read)に対応するコマンド。
 
 ```
-$ diff $(tmpfifo echo a) $(tmpfifo echo b)
+$ diff $(readp echo a) $(readp echo b)
 > a
 < b
 ```
@@ -40,7 +40,7 @@ $ pipe 'exit 1' 'exit 2' true; echo $?
 2
 ```
 
-### either
+### cx {either|maybe|lift|noop} COMMAND \[ARG\]...
 
 #### either COMMAND \[ARG\]... | fmap COMMAND \[ARG\]... | fmap ... | unlift
 すべてのコマンドが成功する場合は最後のコマンドの標準出力を出力する。
