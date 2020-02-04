@@ -4,12 +4,13 @@ dashを少しだけ便利にするutility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### readp COMMAND \[ARG\]...
+### psub
 
+fishのpsubと同じ。
 bashのプロセス置換(read)に対応するコマンド。
 
 ```
-$ diff $(readp echo a) $(readp echo b)
+$ diff $(echo a | psub) $(echo b | psub)
 > a
 < b
 ```
@@ -37,7 +38,7 @@ $ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
 0
 1 2 0
 $ pipe 'exit 1' 'exit 2' true; echo $?
-2
+0
 ```
 
 ### cx {either|maybe|lift|noop} COMMAND \[ARG\]...
@@ -169,7 +170,7 @@ $ cutin 2 echo 1 2 3
 
 ## その他
 
-### ifany COMMAND \[ARG\]...
+### ifany \[-n ERRNO\] COMMAND \[ARG\]...
 
 標準入力がない場合はCOMMANDを実行しない。
 moreutilのifneと同じ。
