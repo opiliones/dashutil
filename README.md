@@ -160,7 +160,7 @@ a
 
 ### withvar VARIABLE COMMMAND \[ARG\]...
 
-VARIABLEの値をCOMMMANDの採取引数に渡して実行する。
+VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
 
 ### readvar VARIABLE NAME
 
