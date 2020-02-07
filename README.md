@@ -113,7 +113,7 @@ eitherまたはmaybeコマンドの出力を受け取って
 付加された文脈を削除して元の標準出力を出力する。
 
 パイプの左側のeitherまたはmaybeまたはliftコマンドがすべて成功しているは
-正常復帰、それ以外の場合は失敗したコマンドの復帰地で復帰する。
+正常復帰、それ以外の場合は失敗したコマンドの戻り値で復帰する。
 
 ### readcxt VARIABLE...
 
@@ -152,37 +152,23 @@ $ tmpf fval 'echo a > $1; cat $1'
 a
 ```
 
-## 疑似データ構造
+## 動的変数
 
-### data
+### var NAME VALUE
 
-- data VARIABLE \[KEY VALUE\]...
-- data DATA set KEY VALUE \[KEY VALUE\]...
-- data DATA get KEY\[,KEY\]... COMMAND \[ARG\]...
-- data DATA get-default KEY VALUE COMMAND \[ARG\]...
-- data DATA exists KEY...
-- data DATA values COMMAND \[ARG\]...
-- data DATA keys COMMAND \[ARG\]...
-- data DATA pairs COMMAND \[ARG\]...
-- data DATA rm [KEY]...
+変数名がNAMEである変数にVALUEを代入する。
 
-```
-$ data hoge \
->   apple  1
->   orange 2
-$ data $hoge get orange echo
-2
-$ data $hoge get cake echo
+### withvar VARIABLE COMMMAND \[ARG\]...
 
-$ data $hoge get-default cake 0 echo
-0
-$ data $hoge values echo
-1
-3
-$ data $hoge pairs echo
-apple 1
-orange 2
-```
+VARIABLEの値をCOMMMANDの採取引数に渡して実行する。
+
+### readvar VARIABLE NAME
+
+変数名がNAMEである変数の値をVARIABLEに代入する。
+
+## 再帰的データ
+
+### jsondir
 
 ## 上記のコマンドと組み合わせるためのコマンド
 
