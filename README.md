@@ -237,6 +237,10 @@ $ null eco a
 $
 ```
 
+### enull COMMAND \[ARG\]...
+
+エラー出力を捨てる。
+
 ### exists VARIABLE...
 
 変数が存在するかどうかを復帰値で返す。
