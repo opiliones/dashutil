@@ -168,7 +168,38 @@ VARIABLEの値をCOMMMANDの採取引数に渡して実行する。
 
 ## 再帰的データ
 
-### jsondir
+### jsondir DIR \[-s CHAR\]
+
+json形式のデータを標準入力に受け取って
+データに対応するディレクトリ構成を作成する。
+
+```
+$ jsondir json -s '\031' << EOF
+{ "array": [ 1, 2 ],
+  "hash": { "array": [ "A", "B"]},
+  "num": 1 }
+EOF
+$ find json -type f
+array/1
+array/2
+hash/array/1
+hash/array/2
+num
+$ read x hash/array/1
+$ echo $x
+A
+```
+
+### withread FILE COMMAND \[ARG\]...
+
+FILEをreadした値をCOMMANDの最終引数に与えて実行する。
+
+```
+$ cat file
+A
+$ withread file echo
+A
+```
 
 ## 上記のコマンドと組み合わせるためのコマンド
 
