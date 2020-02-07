@@ -40,29 +40,95 @@ $ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
 $ pipe 'exit 1' 'exit 2' true; echo $?
 0
 ```
+### maybe COMMAND \[ARG\]...
 
-### cx {either|maybe|lift|noop} COMMAND \[ARG\]...
+標準出力にCOMMANDの成否の文脈を付加する。
 
-#### either COMMAND \[ARG\]... | fmap COMMAND \[ARG\]... | fmap ... | unlift
-すべてのコマンドが成功する場合は最後のコマンドの標準出力を出力する。
-そうでない場合は異常復帰した最も右側のコマンドの戻り値とエラー出力を出力する。
-パイプの途中でコマンドが失敗した場合、それよりも右のCOMMANDは実行されない。
-
-#### context VARIABLE...
-unliftの代わりに使うと、unliftの戻り値に相当する値をVARIABLEに代入する。
-代入が失敗すると1で返る。
+本コマンドの右側にパイプでliftまたはnoopコマンドを
+繋いだ場合、COMMANDが成功した場合にのみliftまたはnoopコマンドの
+引数のコマンドが実行される。
 
 ```
-$ either echo a | fmap a | { context ret
-> case $ret
+$ maybe echo a | lift echo b | lift echo c | decxt
+c
+$ maybe echoa | lift echo b | lift echo c | decxt
+echoa: コマンドが見つかりません
+$ maybe echo a | lift echob | lift echo c | decxt
+echob: コマンドが見つかりません
+```
+
+### either COMMAND \[ARG\]...
+
+標準出力にCOMMANDの成否の文脈を付加する。
+COMMANDが正常復帰する場合はCOMMANDの標準出力を、
+そうでない場合はCOMMANDのエラー出力を
+標準出力に出力する。
+
+本コマンドの右側にパイプでliftまたはnoopコマンドを
+繋いだ場合、COMMANDが成功した場合にのみliftまたはnoopコマンドの
+引数のコマンドが実行される。
+
+```
+$ either echo a | lift echo b | lift echo c | decxt
+c
+$ either echoa | lift echo b | lift echo c | decxt 
+echoa: コマンドが見つかりません
+$ msg=`either echo a | lift echob | lift echo c | decxt 2>&1`
+$ echo "$msg"
+echob: コマンドが見つかりません
+```
+
+### lift COMMAND \[ARG\]...
+
+eitherまたはmaybeコマンドの出力を受け取って
+同じ文脈付きの標準出力を出力する。
+
+本コマンドの右側にパイプでliftまたはnoopコマンドを
+繋いだ場合、COMMANDが成功した場合にのみliftまたはnoopコマンドの
+引数のコマンドが実行される。
+
+### noop COMMAND \[ARG\]...
+
+eitherまたはmaybeコマンドの出力を受け取って
+同じ文脈付きの標準出力を出力する。
+
+liftと違ってCOMMANDの成否にかかわらず
+受け取った文脈の情報を変更しない。
+
+本コマンドの右側にパイプでliftまたはnoopコマンドを繋いだ場合、
+liftまたはnoopコマンドの引数のコマンドが実行されるかどうかは
+COMMANDが実行されるかどうかと同じである。
+
+```
+$ either echo a | noop echob | lift echo c | decxt
+echob: コマンドが見つかりません
+c
+$ either echoa | noop echo b | lift echo c | decxt
+echoa: コマンドが見つかりません
+```
+
+### decxt
+
+eitherまたはmaybeコマンドの出力を受け取って
+付加された文脈を削除して元の標準出力を出力する。
+
+パイプの左側のeitherまたはmaybeまたはliftコマンドがすべて成功しているは
+正常復帰、それ以外の場合は失敗したコマンドの復帰地で復帰する。
+
+### readcxt VARIABLE...
+
+標準出力の文脈部分だけ読み取ってVARIABLEに代入する。
+decxtの戻り値に相当する値が代入される。
+
+```
+$ either echoa | noop echo b | lift echo c | {
+> readcxt ctx
+> case $ctx
 > in 0) cat -
 > ;; *) echo "ERROR: command failed, ecode=$?, msg=$(cat)"
 > esac; }
-ERROR: command failed, ecode=127, msg=a: コマンドが見つかりません
+ERROR: command failed, ecode=127, msg=echoa: コマンドが見つかりません
 ```
-
-#### noop COMMAND \[ARG\]...
-fmapの代わりに使用するとCOMMANDの復帰地にかかわらず、0で復帰したものとして動作する。
 
 ## リソース管理用のコマンド
 
