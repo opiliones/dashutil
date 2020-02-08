@@ -205,10 +205,10 @@ A
 
 ### fval QUOTED \[ARG\]...
 
-QUOTEDの中では位置パラメタでARGを参照できる。
+QUOTEDの中の位置パラメタでARGを参照できる。
 
 ```
-$ fval 'echo $(($1-$2))' 2 1
+$ fval 'echo $(($2-$1))' 1 2
 1
 ```
 
@@ -239,7 +239,7 @@ NUMBER分末尾の引数を最初の引数に持ってくる。
 
 ```
 $ rotn 2 echo 1 2 3
-3 2 1
+2 3 1
 ```
 
 ### cutin NUMBER COMMAND \[ARG\]...
