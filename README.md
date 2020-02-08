@@ -20,7 +20,7 @@ bashのプロセス置換(write)に対応するコマンド。
 moreutilのpee。
  \[ARG\]
 ```
-$ echo a | qee grep a | tr a b
+$ echo a | qee 'grep a' | tr a b
 a
 b
 ```
