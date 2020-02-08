@@ -122,8 +122,8 @@ decxtの戻り値に相当する値が代入される。
 
 ```
 $ either echoa | noop echo b | lift echo c | {
-> readcxt ctx
-> case $ctx
+> readcxt x
+> case $x
 > in 0) cat -
 > ;; *) echo "ERROR: command failed, ecode=$?, msg=$(cat)"
 > esac; }
