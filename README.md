@@ -17,7 +17,7 @@ $ diff $(echo a | psub) $(echo b | psub)
 ### qee COMMAND \[ARG\]...
 
 bashのプロセス置換(write)に対応するコマンド。
-moreutilのpeeの1コマンド版。
+moreutilのpee。
  \[ARG\]
 ```
 $ echo a | qee grep a | tr a b
@@ -34,12 +34,19 @@ $ pipe -r 'exit 1' 'exit 2' true; echo $?
 2
 $ pipe -l 'exit 1' 'exit 2' ture; echo $?
 1
-$ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
-0
-1 2 0
 $ pipe 'exit 1' 'exit 2' true; echo $?
 0
 ```
+### pipestatus VARIABLE QUOTED...
+
+bashのPIPESTATUS相当。VARIABLEに各コマンドの復帰値を代入する。
+
+```
+$ pipestatus -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
+0
+1 2 0
+```
+
 ### maybe COMMAND \[ARG\]...
 
 標準出力にCOMMANDの成否の文脈を付加する。
