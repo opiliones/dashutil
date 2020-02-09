@@ -34,17 +34,12 @@ $ pipe -r 'exit 1' 'exit 2' true; echo $?
 2
 $ pipe -l 'exit 1' 'exit 2' ture; echo $?
 1
-$ pipe 'exit 1' 'exit 2' true; echo $?
-0
-```
-### pipestatus VARIABLE QUOTED...
-
-bashのPIPESTATUS相当。VARIABLEに各コマンドの復帰値を代入する。
-
-```
-$ pipestatus -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
+$ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
 0
 1 2 0
+$ pipe 'exit 1' 'exit 2' true; echo $?
+0
+
 ```
 
 ### maybe COMMAND \[ARG\]...
