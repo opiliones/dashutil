@@ -456,7 +456,7 @@ jsondir() {
       in 1) :
       ;; 2) d=$2
       ;; *) d=$2
-            f=../$3
+            f=$3
       esac
       break
     ;; -s*)
@@ -472,17 +472,17 @@ jsondir() {
     ;; *)
       case $d
       in "") d=$1
-      ;; *)  f=../$1
+      ;; *)  f=$1
       esac
       shift
     esac
   done
 
-  [ -n "$d" ] && [ -n "$n" ] && [ -n "$s" ] &&
-  mkdir "$d" && cd "$d" || {
+  [ -n "$d" ] && [ -n "$n" ] && [ -n "$s" ] || {
     dashutil_usage jsondir
     return 1
   }
+  mkdir "$d" || return
 
   awk '
     BEGIN{RS=""}
@@ -497,9 +497,9 @@ jsondir() {
       print
     }
   ' $f | sed '/^[^"]/s/\([]{}:,[]\)/\n\1\n/g; /^[^"]/s/[ \t]//g' | grep . |
-  awk -v sq=\' -v sl="$s" -v nn="$n" '
+  awk -v sq=\' -v sl="$s" -v nn="$n" -v root=$d '
     function mkdir() {
-      p=""
+      p=root
       for(i=1;i<=j;i++) p=p path[i]"/"
       if(!p) return
       gsub(sq, sq"\\"sq sq, p)
@@ -507,7 +507,7 @@ jsondir() {
       close(cmd)
     }
     function dump() {
-      p=""
+      p=root
       for(i=1;i<j;i++) p=p path[i]"/"
       print $0 > p path[j]
     }
@@ -548,7 +548,6 @@ jsondir() {
     function json() {return dict() || vect() || literal()}
     {json()}
   '
-  cd ..
 }
 
 trapend() {
