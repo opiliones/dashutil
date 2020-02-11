@@ -446,7 +446,7 @@ withread() {
 }
 
 jsondir() {
-  local s=% f= d= n='\000'
+  local s=% f= d= n='	'
 
   while :; do
     case $1
