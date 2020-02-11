@@ -170,7 +170,7 @@ VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
 
 ## 再帰的データ
 
-### jsondir DIR \[-s CHAR\]
+### jsondir \[-s CHAR\] \[-n CHAR\] DIR \[JSON\]
 
 json形式のデータを標準入力に受け取って
 データに対応するディレクトリ構成を作成する。
@@ -244,15 +244,6 @@ NUMBER分末尾の引数を最初の引数に持ってくる。
 ```
 $ rotn 2 echo 1 2 3
 2 3 1
-```
-
-### cutin NUMBER COMMAND \[ARG\]...
-
-最後の引数をNUMBERの引数に持ってくる。
-
-```
-$ cutin 2 echo 1 2 3
-1 3 2
 ```
 
 ## その他
