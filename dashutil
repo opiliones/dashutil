@@ -446,7 +446,7 @@ withread() {
 }
 
 jsondir() {
-  local s=% f= d= n=' '
+  local s=% f= d= n='\000'
 
   while :; do
     case $1
@@ -497,7 +497,7 @@ jsondir() {
       print
     }
   ' $f | sed '/^[^"]/s/\([]{}:,[]\)/\n\1\n/g; /^[^"]/s/[ \t]//g' | grep . |
-  awk -v sq=\' -v sl="$s" -v nn="$n" -v root=$d '
+  awk -v sq=\' -v sl="$s" -v root=$d '
     function mkdir() {
       p=root
       for(i=1;i<=j;i++) p=p path[i]"/"
@@ -523,7 +523,7 @@ jsondir() {
     }
     function key() {
       if(!/^"/) return 0
-      if(!/^"$/) $0=nn
+      if(!/^"$/) $0="'"$n"'"
       gsub(/\//,"|")
       path[++j]=substr($0,2)
       if(get() && !/^:/) exit 1
