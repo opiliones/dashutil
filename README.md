@@ -134,17 +134,6 @@ ERROR: command failed, ecode=127, msg=echoa: コマンドが見つかりませ�
 
 ## リソース管理用のコマンド
 
-### defer COMMAND \[ARG\]...
-
-シグナルトラップを追加する。
-
-```
-$ (touch file; defer rm file; touch file2; defer rm file2)
-$ ls file file2
-ls: cannot access 'file': No such file or directory
-ls: cannot access 'file2': No such file or directory
-```
-
 ### tmpf COMMAND \[ARG\]...
 
 一時ファイルを作って引数に渡してコマンドを実行する。
