@@ -127,7 +127,7 @@ $ either echoa | noop echo b | lift echo c | {
 > readcxt x
 > case $x
 > in 0) cat -
-> ;; *) echo "ERROR: command failed, ecode=$?, msg=$(cat)"
+> ;; *) echo "ERROR: command failed, ecode=$x, msg=$(cat)"
 > esac; }
 ERROR: command failed, ecode=127, msg=echoa: コマンドが見つかりません
 ```
