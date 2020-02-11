@@ -142,6 +142,13 @@ ERROR: command failed, ecode=127, msg=echoa: コマンドが見つかりませ�
 $ tmpf fval 'echo a > $1; cat $1'
 a
 ```
+### trapend [QUOTED]
+
+以下と同義
+
+```
+$ trap QUOTED 0 1 2 3 15
+```
 
 ## 動的変数
 
