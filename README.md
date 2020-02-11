@@ -156,6 +156,18 @@ $ trap QUOTED 0 1 2 3 15
 
 変数名がNAMEである変数にVALUEを代入する。
 
+```
+$ for i in 1 2 3 4; do
+>   var hoge$i $i
+> done
+$ for i in 1 2 3 4; do
+>   withvar hoge$i echo
+> done
+1
+2
+3
+4
+```
 ### withvar VARIABLE COMMMAND \[ARG\]...
 
 VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
@@ -163,6 +175,14 @@ VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
 ### readvar VARIABLE NAME
 
 変数名がNAMEである変数の値をVARIABLEに代入する。
+
+```
+$ a1=hoge
+$ n=1
+$ read b a$n
+$ echo $b
+hoge
+```
 
 ## 再帰的データ
 
@@ -248,6 +268,8 @@ $ rotn 2 echo 1 2 3
 
 標準入力がない場合はCOMMANDを実行しない。
 moreutilのifneと同じ。
+-nオプションで入力がない場合の戻り値を指定する。
+デフォルトは0。
 
 ### null COMMAND \[ARG\]...
 
@@ -262,15 +284,4 @@ $
 ### enull COMMAND \[ARG\]...
 
 エラー出力を捨てる。
-
-### exists VARIABLE...
-
-変数が存在するかどうかを復帰値で返す。
-
-```
-$ exists a && echo $a
-$ a=yes
-$ exists a && echo $a
-yes
-```
 
