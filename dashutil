@@ -553,8 +553,8 @@ jsondir() {
 
 trapend() {
   case $#
-  in 0) trap 1 2 3 15
-  ;; 1) trap "$1" 1 2 3 15
+  in 0) trap  0 1 2 3 15
+  ;; 1) trap "$1" 0 1 2 3 15
   ;; *) dashutil_usage trapend
   esac
 }
