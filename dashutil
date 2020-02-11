@@ -1,0 +1,612 @@
+#!/bin/sh
+
+_DASHUTIL_N=0
+
+command -v mktemp >/dev/null 2>&1 || {
+  mktemp() {
+    set -C
+    while ! : >/tmp/dashutil.file.$$.$((__DASHUTIL_N+=1))
+    do :; done 2>/dev/null
+    set +C
+    echo /tmp/dashutil.file.$$.$__DASHUTIL_N
+  }
+} 
+
+psub() {
+  while test -e /tmp/dashutil.pipe.$$.$((__DASHUTIL_N+=1)); do :; done
+  local f=/tmp/dashutil.pipe.$$.$__DASHUTIL_N
+
+  mkfifo $f || return
+  echo $f
+  ( trap 'rm -f $f' 0 1 2 5 15
+    exec >&- 
+    cat - >$f ) &
+}
+
+qee() (
+  while test -e /tmp/dashutil.pipe.$$.$((__DASHUTIL_N+=1)); do :; done
+  local f=/tmp/dashutil.pipe.$$.$__DASHUTIL_N
+
+  trap 'rm -f $f' 0 1 2 5 15
+  mkfifo $f || return
+
+  eval "$1" <$f &
+  case $#
+  in 0|1)
+    tee $f 
+  ;; *)
+    tee $f | {
+      shift
+      qee "$@"
+    }
+  esac
+)
+
+pipe() {
+  case $1
+  in --)
+    shift
+    _pipe "$@"
+  ;; -a*)
+    case $1
+    in *[^a-zA-Z0-9_]*)
+      dashutil_usage pipe
+    ;; *)
+      case ${1#-a}
+      in "")
+        eval "$2=\$(
+          shift 2
+          exec 3>&1
+          _pipestatus \$# \"\$@\"
+        )"
+      ;; *)
+        eval "${1#-a}=\$(
+          shift
+          exec 3>&1
+          _pipestatus \$# \"\$@\"
+        )"
+      esac
+    esac
+  ;; *)
+    _pipe "$@"
+  esac
+}
+
+_pipe() {
+  local opt= ret1 ret2 
+
+  case $1
+  in --) :
+  ;; -*)
+    opt=$1
+    shift
+  esac
+
+  case $# in 0|1)
+    eval "$1"
+    return
+  esac
+
+  exec 4>&1
+
+  ret1=$(
+    exec 3>&1
+    {
+      (eval "$1") 3>&-
+      echo $? >&3
+    } 4>&- | {
+      shift
+      _pipe $opt "$@"
+    } 3>&- >&4 4>&-
+  )
+  ret2=$?
+
+  exec 4>&-
+  case $opt
+  in -r)
+    [ $ret2 -ne 0 ] && return $ret2 || return $ret1
+  ;; -l)
+    [ $ret1 -ne 0 ] && return $ret1 || return $ret2
+  ;; *)
+    dashutil_usage pipe
+    return
+  esac
+
+  return $ret2
+}
+
+_pipestatus() {
+  local n=$1 ret1
+  shift
+
+  case $n in 1)
+    (eval "$1")
+    ret1=$?
+    echo $ret1 >&3
+    return $ret1
+  esac
+
+  exec 4>&1
+
+  ret1=$(
+    exec 3>&1
+    {
+      _pipestatus $((n-1)) "$@"
+    } 4>&- | {
+      eval "eval \"\${$n}\""
+    } 3>&- >&4 4>&-
+  )
+  echo $ret1 $? >&3
+
+  exec 4>&-
+}
+
+maybe() {
+  : `mktemp`
+  { rm $_
+    "$@" >/dev/fd/3 && just cat /dev/fd/3 || nothing $?
+  } 3<>$_
+}
+
+just() {
+  echo 'maybe
+0'
+  "$@"
+  return 0
+}
+
+nothing() {
+  echo "maybe
+${1:-1}"
+  return ${1:-1}
+}
+
+monad_dispatcher() {
+  local type f=$1
+  shift
+  IFS= read -r type
+  ${f}_$type "$@"
+}
+
+lift() {
+  monad_dispatcher lift "$@"
+}
+
+decxt() {
+  monad_dispatcher decxt "$@"
+}
+
+noop() {
+  monad_dispatcher noop "$@"
+}
+
+readcxt() {
+  monad_dispatcher readcxt "$@"
+}
+
+lift_maybe() {
+  bind_maybe may "$@"
+}
+
+bind_maybe() {
+  local value
+  IFS= read -r value
+  case "$value"
+  in 0) "$@"
+  ;; *) nothing "$value"
+  esac
+}
+
+decxt_maybe() {
+  local value
+  IFS= read -r value
+  case "$value" in 0)
+    cat -
+  esac
+  return "$value"
+}
+
+noop_maybe() {
+  bind_maybe just "$@"
+}
+
+readcxt_maybe() {
+  IFS= read -r "$@"
+}
+
+either() {
+  local out=`mktemp` err=`mktemp`
+  { rm $out $err
+    "$@" >/dev/fd/3 2>/dev/fd/4 &&
+      right cat /dev/fd/3 ||
+      left  $? cat /dev/fd/4
+  } 3>$out 4>$err
+}
+
+right() {
+  echo 'either
+0'
+  "$@"
+  return 0
+}
+
+left() {
+  local ret=$1
+  shift
+  echo either
+  echo $ret
+  "$@"
+  return $ret
+}
+
+lift_either() {
+  bind_either either "$@"
+}
+
+bind_either() {
+  local value
+  IFS= read -r value
+  case "$value"
+  in 0) "$@"
+  ;; *) left "$value" cat -
+  esac
+}
+
+decxt_either() {
+  local r
+  IFS= read -r r || exit
+  case $r
+  in 0) cat -
+  ;; *) cat - >&2
+        return $r
+  esac
+}
+
+noop_either() {
+   bind_either right "$@"
+} 
+
+readcxt_either() {
+  IFS= read -r "$@"
+}
+
+tmpf() {
+  local n=4 f=$(mktemp)
+  while test -e /dev/fd/$((n+=1)); do :; done
+  eval "
+    { rm \$f
+      \"\$@\" /dev/fd/\$n
+    } $n<>\$f
+  "
+}
+
+rot() {
+  local f=$1 n=$#
+  shift
+  set -- "$@" "$@"
+  shift $((n-2))
+  take $n "$f" "$@"
+}
+
+def_take_n() {
+  local n=$(($1+1)) cmd="; }"
+  while [ $((n-=1)) -ge 1 ]; do
+    cmd=" \"\${$n}\"$cmd"
+  done
+  eval "take$1() {$cmd"
+}
+
+take() {
+  local n=$1
+  shift
+  type "take$n" >/dev/null 2>&1 || def_take_n $n
+  "take$n" "$@"
+}
+
+rotn() {
+  local f=$2 n=$(($#-1)) m=$1
+  shift 2
+  set -- "$@" "$@"
+  shift $((n-1-m))
+  take $n "$f" "$@"
+}
+
+fval() {
+  eval "shift; $1"
+}
+
+null() {
+  "$@" >/dev/null 2>&1
+}
+
+enull() {
+  "$@" 2>/dev/null
+}
+
+ifany() {
+  local n=0
+  case $1
+  in --) shift
+  ;; -n*)
+    case ${1#-n}
+    in "") n=$2
+           shift 2
+    ;; *)  n=${1#-n}
+           shift
+    esac
+  esac
+
+  local x
+  IFS= read -r x || return $n
+  { echo "$x"
+    cat -
+  } | "$@"
+}
+
+var() {
+  case $1
+  in *[^a-zA-Z0-9_]*)
+    dashutil_usage var
+  ;; *)
+    eval "$1=\"\$2\""
+  esac
+}
+
+withvar() {
+  case $1
+  in *[^a-zA-Z0-9_]*)
+    dashutil_usage withvar
+  ;; *)
+    eval "shift; \"\$@\" \"\${$1}\""
+  esac
+}
+
+readvar() {
+  case $1$2 
+  in *[^a-zA-Z0-9_]*)
+    dashutil_usage readvar
+  ;; *)
+    eval "$1=\"\${$2}\""
+  esac
+}
+
+quote() {
+  case $1
+  in --) shift
+         _quote "$@"
+         echo "$_DASHUTIL_RET"
+  ;; -v*)
+    case $1
+    in *[^a-zA-Z0-9_]*)
+      dashutil_usage quote
+    ;; *)
+      case ${1#-v}
+      in "")
+        eval "
+          shift 2
+          _quote \"\$@\"
+          $2=\"\$_DASHUTIL_RET\"
+        "
+      ;; *)
+        eval "
+          shift 1
+          _quote \"\$@\"
+          ${1#-v}=\"\$_DASHUTIL_RET\"
+        "
+      esac
+    esac
+  esac
+}
+
+_quote() {
+  local i s
+
+  _DASHUTIL_RET=
+  for i in "$@"; do
+    s=
+    __quote "$i"
+    _DASHUTIL_RET="$_DASHUTIL_RET $s"
+  done
+
+  _DASHUTIL_RET="${_DASHUTIL_RET# }"
+}
+
+__quote() {
+  local IFS="'" i
+  case "$1"
+  in *[\''"$#&!()~|`*;<>{}%][?\ 	
+']*|'')
+    set -f
+    for i in $1_; do
+      case "$i" in *['"$#&!()~|`*;<>{}%][?\ 	
+']*)
+        i="'$i'"
+      esac
+      s="$s$i\'"
+    done
+    set +f
+
+    case "$s"
+    in *"_'\'")
+      s="${s%_*}'"
+    ;; *)
+      s="${s%_*}"
+    esac
+
+  ;; *)
+    s="$1"
+  esac
+}
+
+withread() {
+  local x
+  IFS= read -r x <$1
+  shift
+  "$@" "$x"
+}
+
+jsondir() {
+  local s=% f= d= n=' '
+
+  while :; do
+    case $1
+    in "") break
+    ;; --)
+      case $#
+      in 1) :
+      ;; 2) d=$2
+      ;; *) d=$2
+            f=../$3
+      esac
+      break
+    ;; -s*)
+      case ${1#-s}
+      in "") s=$2; shift 2
+      ;; *)  s=${1#-s}; shift 1
+      esac
+    ;; -n*)
+      case ${1#-n}
+      in "") n=$2; shift 2
+      ;; *)  n=${1#-n}; shift 1
+      esac
+    ;; *)
+      case $d
+      in "") d=$1
+      ;; *)  f=../$1
+      esac
+      shift
+    esac
+  done
+
+  [ -n "$d" ] && [ -n "$n" ] && [ -n "$s" ] &&
+  mkdir "$d" && cd "$d" || {
+    dashutil_usage jsondir
+    return 1
+  }
+
+  awk '
+    BEGIN{RS=""}
+    {
+      while(match($0,/"(\\.|[^"])*"/)) {
+        printf("%s", substr($0, 1, RSTART-1))
+        str=substr($0, RSTART, RLENGTH-1)
+        gsub(/\n/, "\\n", str)
+        print "\n" str
+        $0=substr($0, RSTART+RLENGTH)
+      }
+      print
+    }
+  ' $f | sed '/^[^"]/s/\([]{}:,[]\)/\n\1\n/g; /^[^"]/s/[ \t]//g' | grep . |
+  awk -v sq=\' -v sl="$s" -v nn="$n" '
+    function mkdir() {
+      p=""
+      for(i=1;i<=j;i++) p=p path[i]"/"
+      if(!p) return
+      gsub(sq, sq"\\"sq sq, p)
+      system(cmd="mkdir -p " sq p sq)
+      close(cmd)
+    }
+    function dump() {
+      p=""
+      for(i=1;i<j;i++) p=p path[i]"/"
+      print $0 > p path[j]
+    }
+    function get() {
+      if(getline<=0) exit 1
+      return 1
+    }
+    function literal() {
+      if(!/^(true|false|none|[0-9.](e[-+][0-9]+)?)$|^"/) return 0
+      if(/^"/) $0=substr($0,2)
+      dump()
+      return get()
+    }
+    function key() {
+      if(!/^"/) return 0
+      if(!/^"$/) $0=nn
+      gsub(/\//,"|")
+      path[++j]=substr($0,2)
+      if(get() && !/^:/) exit 1
+      return get()
+    }
+    function vect() {
+      if(!/^\[/) return 0
+      mkdir()
+      path[++j]=1
+      while(get() && json() && /^,/) path[j]++
+      if(!/^]/) exit 1
+      j--
+      return get()
+    }
+    function dict() {
+      if(!/^{/) return 0
+      mkdir()
+      while(get() && key() && json() && j-- && /^,/) {}
+      if(!/^}/) exit 1
+      return get()
+    }
+    function json() {return dict() || vect() || literal()}
+    {json()}
+  '
+  cd ..
+}
+
+trapend() {
+  case $#
+  in 0) trap 1 2 3 15
+  ;; 1) trap "$1" 1 2 3 15
+  ;; *) dashutil_usage trapend
+  esac
+}
+
+dashutil_usage() {
+  case $1
+  in psub)
+    echo "Usage: psub"
+  ;; qee)
+    echo "Usage: qee COMMAND [ARG]..."
+  ;; pipe)
+    echo "Usage: pipe [-r|-l|-a VARIABLE] QUOTED..."
+  ;; maybe)
+    echo "Usage: maybe COMMAND [ARG]..."
+  ;; either)
+    echo "Usage: either COMMAND [ARG]..."
+  ;; lift)
+    echo "Usage: lift COMMAND [ARG]..."
+  ;; noop)
+    echo "Usage: noop COMMAND [ARG]..."
+  ;; decxt)
+    echo "Usage: decxt"
+  ;; readcxt)
+    echo "Usage: readcxt VARIABLE..."
+  ;; tmpf)
+    echo "Usage: tmpf COMMAND [ARG]..."
+  ;; var)
+    echo "Usage: var NAME VALUE"
+  ;; withvar)
+    echo "Usage: withvar VARIABLE COMMMAND [ARG]..."
+  ;; readvar)
+    echo "Usage: readvar VARIABLE NAME"
+  ;; jsondir)
+    echo "Usage: jsondir [-s CHAR] [-n CHAR] DIR [JSON]"
+  ;; withread)
+    echo "Usage: withread FILE COMMAND [ARG]..."
+  ;; fval)
+    echo "Usage: fval QUOTED [ARG]..."
+  ;; quote)
+    echo "Usage: quote [-v VARIABLE] STRING..."
+  ;; rot)
+    echo "Usage: rot COMMAND [ARG]..."
+  ;; rotn)
+    echo "Usage: rotn NUMBER COMMAND [ARG]..."
+  ;; ifany)
+    echo "Usage: ifany [-n ERRNO] COMMAND [ARG]..."
+  ;; null)
+    echo "Usage: null COMMAND [ARG]..."
+  ;; enull)
+    echo "Usage: enull COMMAND [ARG]..."
+  ;; trapend)
+    echo "Usage: trapend QUOTED"
+  esac
+  return 1
+} >&2
