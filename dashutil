@@ -49,7 +49,7 @@ pipe() {
     _pipe "$@"
   ;; -a*)
     case $1
-    in *[^a-zA-Z0-9_]*)
+    in *[!a-zA-Z0-9_]*)
       dashutil_usage pipe
     ;; *)
       case ${1#-a}
@@ -345,7 +345,7 @@ ifany() {
 
 var() {
   case $1
-  in *[^a-zA-Z0-9_]*)
+  in *[!a-zA-Z0-9_]*)
     dashutil_usage var
   ;; *)
     eval "$1=\"\$2\""
@@ -354,7 +354,7 @@ var() {
 
 withvar() {
   case $1
-  in *[^a-zA-Z0-9_]*)
+  in *[!a-zA-Z0-9_]*)
     dashutil_usage withvar
   ;; *)
     eval "shift; \"\$@\" \"\${$1}\""
@@ -363,7 +363,7 @@ withvar() {
 
 readvar() {
   case $1$2 
-  in *[^a-zA-Z0-9_]*)
+  in *[!a-zA-Z0-9_]*)
     dashutil_usage readvar
   ;; *)
     eval "$1=\"\${$2}\""
@@ -377,7 +377,7 @@ quote() {
          echo "$_DASHUTIL_RET"
   ;; -v*)
     case $1
-    in *[^a-zA-Z0-9_]*)
+    in *[!a-zA-Z0-9_]*)
       dashutil_usage quote
     ;; *)
       case ${1#-v}
