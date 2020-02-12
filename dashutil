@@ -547,7 +547,10 @@ jsondir() {
     }
     function json() {return dict() || vect() || literal()}
     {json()}
-  '
+  ' || {
+    rm -rf "$d"
+    return 1
+  }
 }
 
 trapend() {
@@ -556,6 +559,112 @@ trapend() {
   ;; 1) trap "$1" 0 1 2 3 15
   ;; *) dashutil_usage trapend
   esac
+}
+
+ig() {
+  local ret=$?
+  "$@"
+  return $ret
+}
+
+substr() {
+  case $1 in *[!a-zA-Z0-9_]*)
+    dashutil_usage substr
+    return 1
+  esac
+  eval '
+    shift
+    case $#
+    in 2) _substr "$@" ${#1}
+    ;; 3) _substr "$@"
+    ;; *) dashutil_usage substr
+    esac
+    '$1'=$_DASHUTIL_RET
+  '
+}
+
+_substr() {
+  local i=0 s= e= n=$((${#1}-$2-$3+1))
+  while [ $2 -gt $((i+=1)) ]; do
+    s=$s?
+  done
+  i=0
+  while [ $n -ge $((i+=1)) ]; do
+    e=$e?
+  done
+  eval "
+    _DASHUTIL_RET=\${1#$s}
+    _DASHUTIL_RET=\${_DASHUTIL_RET%$e}
+  "
+}
+
+OPT=
+OPTIND=0
+OPTARG=
+OPTOFF=2
+
+getop() {
+  local opts=$1
+  shift
+  shift $OPTIND
+  [ $# = 0 ] && return 1
+  case $1
+  in --)
+    OPTOFF=2
+    OPT=
+    OPTARG=
+    OPTIND=$((OPTIND+1))
+    return 1
+  ;; --*=*)
+    OPTOFF=2
+    OPT=${1%%=*}
+    OPT=${OPT#--}=
+    OPTARG=${1#*=}
+    OPTIND=$((OPTIND+1))
+  ;; --*)
+    OPTOFF=2
+    OPT=${1#--}
+    OPTARG=
+    OPTIND=$((OPTIND+1))
+  ;; -*)
+    substr OPT "$1" $OPTOFF 1
+    case $opts
+    in *"$OPT":*)
+      case ${#1} in $OPTOFF)
+        case $# in 1)
+          OPTARG=$OPT
+          OPT=:
+        ;; *)
+          OPTARG=$2
+          OPTIND=$((OPTIND+2))
+        esac
+      ;; *)
+        substr OPTARG "$1" $((OPTOFF+1))
+        OPTIND=$((OPTIND+1))
+      esac
+      OPTOFF=2
+    ;; *"$OPT"*)
+      [ ${#1} -lt $((OPTOFF+=1)) ] && {
+        OPTOFF=2
+        OPTIND=$((OPTIND+1))
+      }
+      OPTARG=
+    ;; *)
+      [ ${#1} -lt $((OPTOFF+=1)) ] && {
+        OPTOFF=2
+        OPTIND=$((OPTIND+1))
+      }
+      OPTARG=$OPT
+      OPT=?
+    esac
+  ;; *)
+    OPTOFF=2
+    OPT=
+    OPTARG=
+    return 1
+  esac
+
+  return 0
 }
 
 dashutil_usage() {
@@ -606,6 +715,10 @@ dashutil_usage() {
     echo "Usage: enull COMMAND [ARG]..."
   ;; trapend)
     echo "Usage: trapend QUOTED"
+  ;; ig)
+    echo "Usage: ig COMMAND [ARG]..."
+  ;; substr)
+    echo "Usage: substr VARIABLE STRING OFFSET [LENGTH]"
   esac
   return 1
 } >&2
