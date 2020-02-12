@@ -1,6 +1,6 @@
 # dashutil
 
-dashを少しだけ便利にするutility
+dashを少しだけ便利にする車輪の再発明utility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
@@ -294,3 +294,28 @@ $
 ### substr VARIABLE STRING OFFSET \[LENGTH\]
 
 STRINGをOFFSETからLENGTH分切り出してVARIABLEに代入する。
+
+### getop OPTSTRING [args]
+
+getoptsの第二引数をOPT固定にし、静かなモード限定にしたもの。
+shiftするときにOPTINDを-1しなくても良い。
+`--option=...`といったオプションもパースできる。
+
+
+```
+$ while getop a:bc: -a A -bcC -x --long --opt=arg 1 2 3; do echo "OPT=$OPT"; echo "OPTARG=$OPTARG"; done
+OPT=a
+OPTARG=A
+OPT=b
+OPTARG=
+OPT=c
+OPTARG=C
+OPT=x
+OPTARG=
+OPT=long
+OPTARG=
+OPT=opt
+OPTARG=arg
+$ echo $OPTIND
+6
+```
