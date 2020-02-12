@@ -291,3 +291,6 @@ $
 
 復帰値を前のコマンドから変更しない。
 
+### substr VARIABLE STRING OFFSET \[LENGTH\]
+
+STRINGをOFFSETからLENGTH分切り出してVARIABLEに代入する。
