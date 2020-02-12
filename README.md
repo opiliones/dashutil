@@ -314,7 +314,7 @@ OPT=x
 OPTARG=
 OPT=long
 OPTARG=
-OPT=opt
+OPT=opt=
 OPTARG=arg
 $ echo $OPTIND
 6
