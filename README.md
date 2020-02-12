@@ -295,7 +295,7 @@ $
 
 STRINGをOFFSETからLENGTH分切り出してVARIABLEに代入する。
 
-### getop OPTSTRING [args]
+### getop OPTSTRING [ARGS]
 
 getoptsの第二引数をOPT固定にし、静かなモード限定にしたもの。
 shiftするときにOPTINDを-1しなくても良い。
