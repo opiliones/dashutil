@@ -207,7 +207,7 @@ dir/array/2
 dir/array/1
 dir/hash/array/2
 dir/hash/array/1
-$ read x hash/array/1
+$ read x dir/hash/array/1
 $ echo $x
 A
 ```
