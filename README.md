@@ -293,7 +293,7 @@ $
 
 STRINGをOFFSETからLENGTH分切り出してVARIABLEに代入する。
 
-### getop OPTSTRING [args]
+### getop OPTSTRING \[ARG\]...
 
 getoptsの第二引数をOPT固定にし、静かなモード限定にしたもの。
 shiftするときにOPTINDを-1しなくても良い。
@@ -312,7 +312,7 @@ OPT=x
 OPTARG=
 OPT=long
 OPTARG=
-OPT=opt
+OPT=opt=
 OPTARG=arg
 $ echo $OPTIND
 6
