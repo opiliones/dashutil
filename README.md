@@ -196,17 +196,17 @@ nオプションにはキーが空文字だった場合の
 置換文字を指定する。デフォルトはtabである。
 
 ```
-$ jsondir json -s '\031' << EOF
+$ jsondir dir -s '\031' << EOF
 { "array": [ 1, 2 ],
   "hash": { "array": [ "A", "B"]},
   "num": 1 }
 EOF
-$ find json -type f
-array/1
-array/2
-hash/array/1
-hash/array/2
-num
+$ find dir -type f
+dir/num
+dir/array/2
+dir/array/1
+dir/hash/array/2
+dir/hash/array/1
 $ read x hash/array/1
 $ echo $x
 A
@@ -234,14 +234,12 @@ $ fval 'echo $(($2-$1))' 1 2
 1
 ```
 
-### quote \[-v VARIABLE\] STRING...
+### quote VARIABLE STRING...
 
 printfの%qに対応するコマンド。
 
 ```
-$ quote 'a b' "' '"
-'a b' \'' '\'
-$ quote -v foge '" " "a b"'
+$ quote foge '" " "a b"'
 $ eval "printf '%s, ' $hoge"
  , a b
 ```

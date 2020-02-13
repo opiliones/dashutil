@@ -372,29 +372,14 @@ readvar() {
 
 quote() {
   case $1
-  in --) shift
-         _quote "$@"
-         echo "$_DASHUTIL_RET"
-  ;; -v*)
-    case $1
-    in *[!a-zA-Z0-9_]*)
-      dashutil_usage quote
-    ;; *)
-      case ${1#-v}
-      in "")
-        eval "
-          shift 2
-          _quote \"\$@\"
-          $2=\"\$_DASHUTIL_RET\"
-        "
-      ;; *)
-        eval "
-          shift 1
-          _quote \"\$@\"
-          ${1#-v}=\"\$_DASHUTIL_RET\"
-        "
-      esac
-    esac
+  in *[!a-zA-Z0-9_]*)
+    dashutil_usage quote
+  ;; *)
+    eval "
+      shift
+      _quote \"\$@\"
+      $1=\"\$_DASHUTIL_RET\"
+    "
   esac
 }
 
@@ -471,7 +456,7 @@ jsondir() {
       esac
     ;; *)
       case $d
-      in "") d=$1
+      in "") d=${1%/}/
       ;; *)  f=$1
       esac
       shift
@@ -512,7 +497,7 @@ jsondir() {
       print $0 > p path[j]
     }
     function get() {
-      if(getline<=0) exit 1
+      if((getline)<0) exit 1
       return 1
     }
     function literal() {
@@ -523,8 +508,8 @@ jsondir() {
     }
     function key() {
       if(!/^"/) return 0
-      if(!/^"$/) $0="'"$n"'"
-      gsub(/\//,"|")
+      if(/^"$/) $0="'"$n"'"
+      gsub(/\//,sl)
       path[++j]=substr($0,2)
       if(get() && !/^:/) exit 1
       return get()
@@ -541,12 +526,16 @@ jsondir() {
     function dict() {
       if(!/^{/) return 0
       mkdir()
-      while(get() && key() && json() && j-- && /^,/) {}
+      while(get() && key()) {
+        if(!json()) exit 1
+        j--
+        if(!/^,/) break
+      }
       if(!/^}/) exit 1
       return get()
     }
     function json() {return dict() || vect() || literal()}
-    {json()}
+    {exit !json()}
   ' || {
     rm -rf "$d"
     return 1
@@ -585,17 +574,15 @@ substr() {
 
 _substr() {
   local i=0 s= e= n=$((${#1}-$2-$3+1))
+  _DASHUTIL_RET=$1
   while [ $2 -gt $((i+=1)) ]; do
-    s=$s?
+    _DASHUTIL_RET=${_DASHUTIL_RET#?}
   done
   i=0
   while [ $n -ge $((i+=1)) ]; do
+    _DASHUTIL_RET=${_DASHUTIL_RET%?}
     e=$e?
   done
-  eval "
-    _DASHUTIL_RET=\${1#$s}
-    _DASHUTIL_RET=\${_DASHUTIL_RET%$e}
-  "
 }
 
 OPT=
@@ -702,7 +689,7 @@ dashutil_usage() {
   ;; fval)
     echo "Usage: fval QUOTED [ARG]..."
   ;; quote)
-    echo "Usage: quote [-v VARIABLE] STRING..."
+    echo "Usage: quote VARIABLE STRING..."
   ;; rot)
     echo "Usage: rot COMMAND [ARG]..."
   ;; rotn)
