@@ -20,7 +20,6 @@ $ diff $(echo a | psub) $(echo b | psub)
 
 bashのプロセス置換(write)に対応するコマンド。
 moreutilのpee。
- \[ARG\]
 ```
 $ echo a | qee 'tr a c' | tr a b
 b
