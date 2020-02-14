@@ -1,0 +1,27 @@
+#!/bin/sh
+
+. ./wheelie
+
+rm -f /tmp/out /tmp/exp
+
+compare() {
+  [ -e /tmp/exp ] && [ -e /tmp/out ] && {
+    echo "#### output compare"
+    diff /tmp/exp /tmp/out
+    rm -f /tmp/out /tmp/exp
+  }
+}
+
+awk '/```/{if(f) f--; else f++} f' README.md |
+  while IFS= read -r line; do
+    case $line
+    in '`'*)
+      compare
+    ;; '$'*)
+      compare
+      eval "${line#?}" >/tmp/out 2>&1
+      echo "## ${line#?} =>$?"
+    ;; *)
+      echo "$line" >> /tmp/exp
+    esac
+  done

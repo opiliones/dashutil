@@ -1,4 +1,4 @@
-# dashutil
+# wheelie
 
 dashを少しだけ便利にする車輪の再発明utility
 
@@ -11,8 +11,10 @@ bashのプロセス置換(read)に対応するコマンド。
 
 ```
 $ diff $(echo a | psub) $(echo b | psub)
-> a
-< b
+1c1
+< a
+---
+> b
 ```
 ### qee COMMAND \[ARG\]...
 
@@ -21,25 +23,31 @@ moreutilのpee。
  \[ARG\]
 ```
 $ echo a | qee 'tr a c' | tr a b
-c
 b
+c
 ```
 
-### pipe \[-r|-l|-a VARIABLE\] QUOTED...
+### pipe \[-r|-l\] QUOTED...
 
 パイプの復帰値のポリシーを変更する。
 
 ```
 $ pipe -r 'exit 1' 'exit 2' true; echo $?
 2
-$ pipe -l 'exit 1' 'exit 2' ture; echo $?
+$ pipe -l 'exit 1' 'exit 2' true; echo $?
 1
-$ pipe -a fuga 'exit 1' 'exit 2' ture; echo $?; echo $fuga
-0
-1 2 0
 $ pipe 'exit 1' 'exit 2' true; echo $?
 0
+```
 
+### pipestatus VARIABLE QUOTED...
+
+パイプの復帰値のリストを取得する。
+
+```
+$ pipestatus fuga 'exit 1' 'exit 2' true; echo $?; echo $fuga
+0
+1 2 0
 ```
 
 ### maybe COMMAND \[ARG\]...
@@ -123,12 +131,7 @@ eitherまたはmaybeコマンドの出力を受け取って
 decxtの戻り値に相当する値が代入される。
 
 ```
-$ either echoa | noop echo b | lift echo c | {
-> readcxt x
-> case $x
-> in 0) cat -
-> ;; *) echo "ERROR: command failed, ecode=$x, msg=$(cat)"
-> esac; }
+$ either echoa | noop echo b | lift echo c | { readcxt x; case $x in 0) cat - ;; *) echo "ERROR: command failed, ecode=$x, msg=$(cat)";; esac; }
 ERROR: command failed, ecode=127, msg=echoa: コマンドが見つかりません
 ```
 
@@ -144,10 +147,11 @@ a
 ```
 ### trapend [QUOTED]
 
-以下と同義
+`trap QUOTED 0 1 2 3 15`と同義
 
 ```
-$ trap QUOTED 0 1 2 3 15
+$ (trapend 'echo a')
+a
 ```
 
 ## 動的変数
@@ -157,12 +161,8 @@ $ trap QUOTED 0 1 2 3 15
 変数名がNAMEである変数にVALUEを代入する。
 
 ```
-$ for i in 1 2 3 4; do
->   var hoge$i $i
-> done
-$ for i in 1 2 3 4; do
->   withvar hoge$i echo
-> done
+$ for i in 1 2 3 4; do var hoge$i $i; done
+$ for i in 1 2 3 4; do withvar hoge$i echo; done
 1
 2
 3
@@ -179,7 +179,7 @@ VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
 ```
 $ a1=hoge
 $ n=1
-$ read b a$n
+$ readvar b a$n
 $ echo $b
 hoge
 ```
@@ -196,20 +196,18 @@ nオプションにはキーが空文字だった場合の
 置換文字を指定する。デフォルトはtabである。
 
 ```
-$ jsondir dir -s '\031' << EOF
-{ "array": [ 1, 2 ],
-  "hash": { "array": [ "A", "B"]},
-  "num": 1 }
-EOF
+$ echo '{"array": [1, 2], "hash": {"array": ["A", "B"]}, "num": 1}' > json
+$ cat json | jsondir dir -s '\031'
 $ find dir -type f
 dir/num
 dir/array/2
 dir/array/1
 dir/hash/array/2
 dir/hash/array/1
-$ read x dir/hash/array/1
+$ read x <dir/hash/array/1
 $ echo $x
 A
+$ rm -rf dir
 ```
 
 ### withread FILE COMMAND \[ARG\]...
@@ -217,10 +215,10 @@ A
 FILEをreadした値をCOMMANDの最終引数に与えて実行する。
 
 ```
-$ cat file
-A
+$ echo A >file
 $ withread file echo
 A
+$ rm -f file
 ```
 
 ## 上記のコマンドと組み合わせるためのコマンド
@@ -239,9 +237,10 @@ $ fval 'echo $(($2-$1))' 1 2
 printfの%qに対応するコマンド。
 
 ```
-$ quote foge '" " "a b"'
-$ eval "printf '%s, ' $hoge"
- , a b
+$ quote hoge " " "a b"
+$ eval "printf '%s,\n' $hoge"
+ ,
+a b, 
 ```
 
 ### rot COMMAND \[ARG\]...
@@ -271,6 +270,12 @@ moreutilのifneと同じ。
 -nオプションで入力がない場合の戻り値を指定する。
 デフォルトは0。
 
+```
+$ : | ifany -n 1 echo a
+$ echo $?
+1
+```
+
 ### null COMMAND \[ARG\]...
 
 出力をすべて捨てる。
@@ -285,14 +290,31 @@ $
 
 エラー出力を捨てる。
 
+```
+$ enull echo a
+a
+$ enull eco a
+$
+```
+
 ### ig COMMAND \[ARG\]...
 
 復帰値を前のコマンドから変更しない。
+
+```
+$ :; ig false; echo $?
+0
+```
 
 ### substr VARIABLE STRING OFFSET \[LENGTH\]
 
 STRINGをOFFSETからLENGTH分切り出してVARIABLEに代入する。
 
+```
+$ substr x 12345 2 2
+$ echo $x
+23
+```
 ### getop OPTSTRING \[ARG\]...
 
 getoptsの第二引数をOPT固定にし、静かなモード限定にしたもの。
@@ -308,8 +330,8 @@ OPT=b
 OPTARG=
 OPT=c
 OPTARG=C
-OPT=x
-OPTARG=
+OPT=?
+OPTARG=x
 OPT=long
 OPTARG=
 OPT=opt=
