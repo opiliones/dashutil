@@ -1,0 +1,692 @@
+#!/bin/sh
+
+_WHL_N=0
+
+command -v mktemp >/dev/null 2>&1 || {
+  mktemp() {
+    set -C
+    while ! : >/tmp/wheelie.file.$$.$((_WHL_N+=1))
+    do :; done 2>/dev/null
+    set +C
+    echo /tmp/wheelie.file.$$.$_WHL_N
+  }
+} 
+
+psub() {
+  while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
+  local _f_wh=/tmp/wheelie.pipe.$$.$_WHL_N
+
+  mkfifo $_f_wh || return
+  echo $_f_wh
+  ( trap 'rm -f $_f_wh' 0 1 2 5 15
+    exec >&- 
+    cat - >$_f_wh ) &
+}
+
+qee() (
+  while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
+  local _f_wh=/tmp/wheelie.pipe.$$.$_WHL_N
+
+  trap 'rm -f $_f_wh' 0 1 2 5 15
+  mkfifo $_f_wh || return
+
+  eval "$1" <$_f_wh &
+  case $#
+  in 0|1)
+    tee $_f_wh 
+  ;; *)
+    tee $_f_wh | {
+      shift
+      qee "$@"
+    }
+  esac
+)
+
+pipe() {
+  local _opt_wh= _ret1_wh _ret2_wh 
+
+  case $1
+  in --)
+    shift
+  ;; -r|-l)
+    _opt_wh=$1
+    shift
+  esac
+
+  case $# in 0|1)
+    eval "$1"
+    return
+  esac
+
+  exec 4>&1
+
+  _ret1_wh=$(
+    exec 3>&1
+    {
+      (eval "$1") 3>&-
+      echo $? >&3
+    } 4>&- | {
+      shift
+      pipe $_opt_wh "$@"
+    } 3>&- >&4 4>&-
+  )
+  _ret2_wh=$?
+
+  exec 4>&-
+  case $_opt_wh
+  in -r)
+    [ $_ret2_wh -ne 0 ] && return $_ret2_wh || return $_ret1_wh
+  ;; -l)
+    [ $_ret1_wh -ne 0 ] && return $_ret1_wh || return $_ret2_wh
+  esac
+
+  return $_ret2_wh
+}
+
+pipestatus() {
+    case $1
+    in *[!a-zA-Z0-9_]*)
+      wheelie_usage pipe
+    ;; *)
+      eval "$1=\$(
+        shift
+        exec 3>&1
+        _pipestatus \$# \"\$@\"
+      )"
+    esac
+}
+
+_pipestatus() {
+  local _n_wh=$1 _ret1_wh
+  shift
+
+  case $_n_wh in 1)
+    (eval "$1")
+    _ret1_wh=$?
+    echo $_ret1_wh >&3
+    return $_ret1_wh
+  esac
+
+  exec 4>&1
+
+  _ret1_wh=$(
+    exec 3>&1
+    {
+      _pipestatus $((_n_wh-1)) "$@"
+    } 4>&- | {
+      eval "eval \"\${$_n_wh}\""
+    } 3>&- >&4 4>&-
+  )
+  echo $_ret1_wh $? >&3
+
+  exec 4>&-
+}
+
+maybe() {
+  : `mktemp`
+  { rm $_
+    "$@" >/dev/fd/3 && just cat /dev/fd/3 || nothing $?
+  } 3<>$_
+}
+
+just() {
+  echo 'maybe
+0'
+  "$@"
+  return 0
+}
+
+nothing() {
+  echo "maybe
+${1:-1}"
+  return ${1:-1}
+}
+
+monad_dispatcher() {
+  local _type_wh _f_wh=$1
+  shift
+  IFS= read -r _type_wh
+  ${_f_wh}_$_type_wh "$@"
+}
+
+lift() {
+  monad_dispatcher lift "$@"
+}
+
+decxt() {
+  monad_dispatcher decxt "$@"
+}
+
+noop() {
+  monad_dispatcher noop "$@"
+}
+
+readcxt() {
+  monad_dispatcher readcxt "$@"
+}
+
+lift_maybe() {
+  bind_maybe maybe "$@"
+}
+
+bind_maybe() {
+  local _value_wh
+  IFS= read -r _value_wh
+  case "$_value_wh"
+  in 0) "$@"
+  ;; *) nothing "$_value_wh"
+  esac
+}
+
+decxt_maybe() {
+  local _value_wh
+  IFS= read -r _value_wh
+  case "$_value_wh" in 0)
+    cat -
+  esac
+  return "$_value_wh"
+}
+
+noop_maybe() {
+  bind_maybe just "$@"
+}
+
+readcxt_maybe() {
+  IFS= read -r "$@"
+}
+
+either() {
+  local _out_wh=`mktemp` _err_wh=`mktemp`
+  { rm $_out_wh $_err_wh
+    "$@" >/dev/fd/3 2>/dev/fd/4 &&
+      right cat /dev/fd/3 ||
+      left  $? cat /dev/fd/4
+  } 3>$_out_wh 4>$_err_wh
+}
+
+right() {
+  echo 'either
+0'
+  "$@"
+  return 0
+}
+
+left() {
+  local _ret_wh=$1
+  shift
+  echo either
+  echo $_ret_wh
+  "$@"
+  return $_ret_wh
+}
+
+lift_either() {
+  bind_either either "$@"
+}
+
+bind_either() {
+  local _value_wh
+  IFS= read -r _value_wh
+  case "$_value_wh"
+  in 0) "$@"
+  ;; *) left "$_value_wh" cat -
+  esac
+}
+
+decxt_either() {
+  local _r_wh
+  IFS= read -r _r_wh || exit
+  case $_r_wh
+  in 0) cat -
+  ;; *) cat - >&2
+        return $_r_wh
+  esac
+}
+
+noop_either() {
+   bind_either right "$@"
+} 
+
+readcxt_either() {
+  IFS= read -r "$@"
+}
+
+tmpf() {
+  local _n_wh=4 _f_wh=$(mktemp)
+  while test -e /dev/fd/$((_n_wh+=1)); do :; done
+  eval "
+    { rm \$_f_wh
+      \"\$@\" /dev/fd/\$_n_wh
+    } $_n_wh<>\$_f_wh
+  "
+}
+
+rot() {
+  local _f_wh=$1 _n_wh=$#
+  shift
+  set -- "$@" "$@"
+  shift $((_n_wh-2))
+  take $_n_wh "$_f_wh" "$@"
+}
+
+def_take_n() {
+  local _n_wh=$(($1+1)) _cmd_wh="; }"
+  while [ $((_n_wh-=1)) -ge 1 ]; do
+    _cmd_wh=" \"\${$_n_wh}\"$_cmd_wh"
+  done
+  eval "take$1() {$_cmd_wh"
+}
+
+take() {
+  local _n_wh=$1
+  shift
+  _type_wh "take$_n_wh" >/dev/null 2>&1 || def_take_n $_n_wh
+  "take$_n_wh" "$@"
+}
+
+rotn() {
+  local _f_wh=$2 _n_wh=$(($#-1)) _m_wh=$1
+  shift 2
+  set -- "$@" "$@"
+  shift $((_n_wh-1-_m_wh))
+  take $_n_wh "$_f_wh" "$@"
+}
+
+fval() {
+  eval "shift; $1"
+}
+
+null() {
+  "$@" >/dev/null 2>&1
+}
+
+enull() {
+  "$@" 2>/dev/null
+}
+
+ifany() {
+  local _n_wh=0
+  case $1
+  in --) shift
+  ;; -n*)
+    case ${1#-n}
+    in "") _n_wh=$2
+           shift 2
+    ;; *)  _n_wh=${1#-n}
+           shift
+    esac
+  esac
+
+  local _x_wh
+  IFS= read -r _x_wh || return $_n_wh
+  { echo "$_x_wh"
+    cat -
+  } | "$@"
+}
+
+var() {
+  case $1
+  in *[!a-zA-Z0-9_]*)
+    wheelie_usage var
+  ;; *)
+    eval "$1=\"\$2\""
+  esac
+}
+
+withvar() {
+  case $1
+  in *[!a-zA-Z0-9_]*)
+    wheelie_usage withvar
+  ;; *)
+    eval "shift; \"\$@\" \"\${$1}\""
+  esac
+}
+
+readvar() {
+  case $1$2 
+  in *[!a-zA-Z0-9_]*)
+    wheelie_usage readvar
+  ;; *)
+    eval "$1=\"\${$2}\""
+  esac
+}
+
+quote() {
+  case $1
+  in *[!a-zA-Z0-9_]*)
+    wheelie_usage quote
+  ;; *)
+    eval "
+      shift
+      _quote \"\$@\"
+      $1=\"\$_WHL_RET\"
+    "
+  esac
+}
+
+_quote() {
+  local _i_wh _s_wh
+
+  _WHL_RET=
+  for _i_wh in "$@"; do
+    _s_wh=
+    __quote "$_i_wh"
+    _WHL_RET="$_WHL_RET $_s_wh"
+  done
+
+  _WHL_RET="${_WHL_RET# }"
+}
+
+__quote() {
+  local IFS="'" _i_wh
+  case "$1"
+  in *[\''"$#&!()~|`*;<>{}%][?\ 	
+']*|'')
+    set -f
+    for _i_wh in $1_; do
+      case "$_i_wh" in *['"$#&!()~|`*;<>{}%][?\ 	
+']*)
+        _i_wh="'$_i_wh'"
+      esac
+      _s_wh="$_s_wh$_i_wh\'"
+    done
+    set +f
+
+    case "$_s_wh"
+    in *"_'\'")
+      _s_wh="${_s_wh%_*}'"
+    ;; *)
+      _s_wh="${_s_wh%_*}"
+    esac
+
+  ;; *)
+    _s_wh="$1"
+  esac
+}
+
+withread() {
+  local _x_wh
+  IFS= read -r _x_wh <$1
+  shift
+  "$@" "$_x_wh"
+}
+
+jsondir() {
+  local _s_wh=% _f_wh= _d_wh= _n_wh='	'
+
+  while :; do
+    case $1
+    in "") break
+    ;; --)
+      case $#
+      in 1) :
+      ;; 2) _d_wh=$2
+      ;; *) _d_wh=$2
+            _f_wh=$3
+      esac
+      break
+    ;; -s*)
+      case ${1#-s}
+      in "") _s_wh=$2; shift 2
+      ;; *)  _s_wh=${1#-s}; shift 1
+      esac
+    ;; -n*)
+      case ${1#-n}
+      in "") _n_wh=$2; shift 2
+      ;; *)  _n_wh=${1#-n}; shift 1
+      esac
+    ;; *)
+      case $_d_wh
+      in "") _d_wh=${1%/}/
+      ;; *)  _f_wh=$1
+      esac
+      shift
+    esac
+  done
+
+  [ -n "$_d_wh" ] && [ -n "$_n_wh" ] && [ -n "$_s_wh" ] || {
+    wheelie_usage jsondir
+    return 1
+  }
+  mkdir "$_d_wh" || return
+
+  awk '
+    BEGIN{RS=""}
+    {
+      while(match($0,/"(\\.|[^"])*"/)) {
+        printf("%s", substr($0, 1, RSTART-1))
+        str=substr($0, RSTART, RLENGTH-1)
+        gsub(/\n/, "\\n", str)
+        print "\n" str
+        $0=substr($0, RSTART+RLENGTH)
+      }
+      print
+    }
+  ' $_f_wh | sed '/^[^"]/s/\([]{}:,[]\)/\n\1\n/g; /^[^"]/s/[ \t]//g' | grep . |
+  awk -v sq=\' -v sl="$_s_wh" -v root=$_d_wh '
+    function mkdir() {
+      p=root
+      for(i=1;i<=j;i++) p=p path[i]"/"
+      if(!p) return
+      gsub(sq, sq"\\"sq sq, p)
+      system(cmd="mkdir -p " sq p sq)
+      close(cmd)
+    }
+    function dump() {
+      p=root
+      for(i=1;i<j;i++) p=p path[i]"/"
+      print $0 > p path[j]
+    }
+    function get() {
+      if((getline)<0) exit 1
+      return 1
+    }
+    function literal() {
+      if(!/^(true|false|null|[0-9.](e[-+][0-9]+)?)$|^"/) return 0
+      if(/^"/) $0=substr($0,2)
+      dump()
+      return get()
+    }
+    function key() {
+      if(!/^"/) return 0
+      if(/^"$/) $0="'"$_n_wh"'"
+      gsub(/\//,sl)
+      path[++j]=substr($0,2)
+      if(get() && !/^:/) exit 1
+      return get()
+    }
+    function vect() {
+      if(!/^\[/) return 0
+      mkdir()
+      path[++j]=1
+      while(get() && json() && /^,/) path[j]++
+      if(!/^]/) exit 1
+      j--
+      return get()
+    }
+    function dict() {
+      if(!/^{/) return 0
+      mkdir()
+      while(get() && key()) {
+        if(!json()) exit 1
+        j--
+        if(!/^,/) break
+      }
+      if(!/^}/) exit 1
+      return get()
+    }
+    function json() {return dict() || vect() || literal()}
+    {exit !json()}
+  ' || {
+    rm -rf "$_d_wh"
+    return 1
+  }
+}
+
+trapend() {
+  case $#
+  in 0) trap  0 1 2 3 15
+  ;; 1) trap "$1" 0 1 2 3 15
+  ;; *) wheelie_usage trapend
+  esac
+}
+
+ig() {
+  local _ret_wh=$?
+  "$@"
+  return $_ret_wh
+}
+
+substr() {
+  case $1 in *[!a-zA-Z0-9_]*)
+    wheelie_usage substr
+    return 1
+  esac
+  eval '
+    shift
+    case $#
+    in 2) _substr "$@" ${#1}
+    ;; 3) _substr "$@"
+    ;; *) wheelie_usage substr
+    esac
+    '$1'=$_WHL_RET
+  '
+}
+
+_substr() {
+  local _i_wh=0 _s_wh= _e_wh= _n_wh=$((${#1}-$2-$3+1))
+  _WHL_RET=$1
+  while [ $2 -gt $((_i_wh+=1)) ]; do
+    _WHL_RET=${_WHL_RET#?}
+  done
+  _i_wh=0
+  while [ $_n_wh -ge $((_i_wh+=1)) ]; do
+    _WHL_RET=${_WHL_RET%?}
+    _e_wh=$_e_wh?
+  done
+}
+
+OPT=
+OPTIND=0
+OPTARG=
+OPTOFF=2
+
+getop() {
+  local _opts_wh=$1
+  shift
+  shift $OPTIND
+  [ $# = 0 ] && return 1
+  case $1
+  in --)
+    OPTOFF=2
+    OPT=
+    OPTARG=
+    OPTIND=$((OPTIND+1))
+    return 1
+  ;; --*=*)
+    OPTOFF=2
+    OPT=${1%%=*}
+    OPT=${OPT#--}=
+    OPTARG=${1#*=}
+    OPTIND=$((OPTIND+1))
+  ;; --*)
+    OPTOFF=2
+    OPT=${1#--}
+    OPTARG=
+    OPTIND=$((OPTIND+1))
+  ;; -*)
+    substr OPT "$1" $OPTOFF 1
+    case $_opts_wh
+    in *"$OPT":*)
+      case ${#1} in $OPTOFF)
+        case $# in 1)
+          OPTARG=$OPT
+          OPT=:
+        ;; *)
+          OPTARG=$2
+          OPTIND=$((OPTIND+2))
+        esac
+      ;; *)
+        substr OPTARG "$1" $((OPTOFF+1))
+        OPTIND=$((OPTIND+1))
+      esac
+      OPTOFF=2
+    ;; *"$OPT"*)
+      [ ${#1} -lt $((OPTOFF+=1)) ] && {
+        OPTOFF=2
+        OPTIND=$((OPTIND+1))
+      }
+      OPTARG=
+    ;; *)
+      [ ${#1} -lt $((OPTOFF+=1)) ] && {
+        OPTOFF=2
+        OPTIND=$((OPTIND+1))
+      }
+      OPTARG=$OPT
+      OPT=?
+    esac
+  ;; *)
+    OPTOFF=2
+    OPT=
+    OPTARG=
+    return 1
+  esac
+
+  return 0
+}
+
+wheelie_usage() {
+  case $1
+  in psub)
+    echo "Usage: psub"
+  ;; qee)
+    echo "Usage: qee COMMAND [ARG]..."
+  ;; pipe)
+    echo "Usage: pipe [-r|-l|-a VARIABLE] QUOTED..."
+  ;; maybe)
+    echo "Usage: maybe COMMAND [ARG]..."
+  ;; either)
+    echo "Usage: either COMMAND [ARG]..."
+  ;; lift)
+    echo "Usage: lift COMMAND [ARG]..."
+  ;; noop)
+    echo "Usage: noop COMMAND [ARG]..."
+  ;; decxt)
+    echo "Usage: decxt"
+  ;; readcxt)
+    echo "Usage: readcxt VARIABLE..."
+  ;; tmpf)
+    echo "Usage: tmpf COMMAND [ARG]..."
+  ;; var)
+    echo "Usage: var NAME VALUE"
+  ;; withvar)
+    echo "Usage: withvar VARIABLE COMMMAND [ARG]..."
+  ;; readvar)
+    echo "Usage: readvar VARIABLE NAME"
+  ;; jsondir)
+    echo "Usage: jsondir [-s CHAR] [-n CHAR] DIR [JSON]"
+  ;; withread)
+    echo "Usage: withread FILE COMMAND [ARG]..."
+  ;; fval)
+    echo "Usage: fval QUOTED [ARG]..."
+  ;; quote)
+    echo "Usage: quote VARIABLE STRING..."
+  ;; rot)
+    echo "Usage: rot COMMAND [ARG]..."
+  ;; rotn)
+    echo "Usage: rotn NUMBER COMMAND [ARG]..."
+  ;; ifany)
+    echo "Usage: ifany [-n ERRNO] COMMAND [ARG]..."
+  ;; null)
+    echo "Usage: null COMMAND [ARG]..."
+  ;; enull)
+    echo "Usage: enull COMMAND [ARG]..."
+  ;; trapend)
+    echo "Usage: trapend QUOTED"
+  ;; ig)
+    echo "Usage: ig COMMAND [ARG]..."
+  ;; substr)
+    echo "Usage: substr VARIABLE STRING OFFSET [LENGTH]"
+  esac
+  return 1
+} >&2
