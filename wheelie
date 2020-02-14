@@ -640,9 +640,11 @@ wheelie_usage() {
   in psub)
     echo "Usage: psub"
   ;; qee)
-    echo "Usage: qee COMMAND [ARG]..."
+    echo "Usage: qee QUOTED..."
   ;; pipe)
-    echo "Usage: pipe [-r|-l|-a VARIABLE] QUOTED..."
+    echo "Usage: pipe [-r|-l] QUOTED..."
+  ;; pipestatus)
+    echo "Usage: VARIABLE QUOTED..."
   ;; maybe)
     echo "Usage: maybe COMMAND [ARG]..."
   ;; either)
