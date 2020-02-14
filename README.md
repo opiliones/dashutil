@@ -16,7 +16,7 @@ $ diff $(echo a | psub) $(echo b | psub)
 ---
 > b
 ```
-### qee COMMAND \[ARG\]...
+### qee QUOTED...
 
 bashのプロセス置換(write)に対応するコマンド。
 moreutilのpee。
