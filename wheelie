@@ -418,7 +418,7 @@ withread() {
   "$@" "$_x_wh"
 }
 
-jsondir() {
+_recursive_data() {
   local _s_wh=% _f_wh= _d_wh= _n_wh='	'
 
   while :; do
@@ -452,11 +452,25 @@ jsondir() {
   done
 
   [ -n "$_d_wh" ] && [ -n "$_n_wh" ] && [ -n "$_s_wh" ] || {
-    wheelie_usage jsondir
+    wheelie_usage ${_func_wh#_}
     return 1
   }
   mkdir "$_d_wh" || return
+  
+  "$_func_wh"
+}
 
+jsondir() {
+  local _t_wh=0 _func_wh=_jsondir
+  _recursive_data "$@"
+}
+
+yamldir() {
+  local _t_wh=1 _func_wh=_yamldir
+  _recursive_data "$@"
+}
+
+_jsondir() {
   awk '
     BEGIN{RS=""}
     {
@@ -469,8 +483,9 @@ jsondir() {
       }
       print
     }
-  ' $_f_wh | sed '/^[^"]/s/\([]{}:,[]\)/\n\1\n/g; /^[^"]/s/[ \t]//g' | grep . |
-  awk -v sq=\' -v sl="$_s_wh" -v root=$_d_wh '
+  ' $_f_wh | sed '/^[^"]/s/\([]{}:,[]\)/\n\1\n/g' |
+    sed '/^[^"]/s/^[ \t]*//; /^[^"]/s/[ \t]*$//' | grep . |
+  awk -v sq=\' -v sl="$_s_wh" -v root=$_d_wh -v t=$_t_wh '
     function mkdir() {
       p=root
       for(i=1;i<=j;i++) p=p path[i]"/"
@@ -479,26 +494,37 @@ jsondir() {
       system(cmd="mkdir -p " sq p sq)
       close(cmd)
     }
-    function dump() {
+    function dump(x) {
       p=root
       for(i=1;i<j;i++) p=p path[i]"/"
-      print $0 > p path[j]
+      if(x) print x  > p path[j]
+      else  print $0 > p path[j]
     }
     function get() {
       if((getline)<0) exit 1
       return 1
     }
     function literal() {
-      if(!/^(true|false|null|[0-9.](e[-+][0-9]+)?)$|^"/) return 0
+      if(!t && !/^(true|false|null|[0-9.](e[-+][0-9]+)?)$|^"/) return 0
+      if(/^:/) return 0
       if(/^"/) $0=substr($0,2)
+      else if(t) {
+        if(/^[],{}[]/) {
+          dump("null")
+          return 1
+        }
+      }
       dump()
       return get()
     }
     function key() {
-      if(!/^"/) return 0
+      if(t) {if(/^[],{}:[]/) return 0}
+      else  if(!/^"/) return 0
       if(/^"$/) $0="'"$_n_wh"'"
+      if(/^"/) $0=substr($0,2)
+      else if(t) gsub(/^[ \t]|[ \t]$/, "")
       gsub(/\//,sl)
-      path[++j]=substr($0,2)
+      path[++j]=$0
       if(get() && !/^:/) exit 1
       return get()
     }
@@ -528,6 +554,64 @@ jsondir() {
     rm -rf "$_d_wh"
     return 1
   }
+}
+
+_yamldir() {
+  _block_to_flow $_f_wh | {
+    _f_wh=
+    _jsondir
+  }
+}
+
+_block_to_flow() {
+  awk '
+    BEGIN{RS=""}
+    {
+      while(match($0,/"(\\.|[^"])*"/)) {
+        printf("%s", substr($0, 1, RSTART-1))
+        str=substr($0, RSTART, RLENGTH)
+        gsub(/\n/, "\\n", str)
+        printf("%s", str)
+        $0=substr($0, RSTART+RLENGTH)
+      }
+      print
+    }
+  ' $_f_wh | awk 'match($0, /^[ \t]*- /) {
+    print substr($0, 1, RLENGTH)
+    sub(/-/, " ")
+    print
+    next
+  } 1' | awk '
+    BEGIN {stack[i=0]=-1}
+    /^[ \t]*- / {
+      match($0, /^[ \t]*/)
+      while(stack[i]>RLENGTH) print stack[i--,0]
+      if(stack[i]==RLENGTH) sub(/-/, ",")
+      else {
+        stack[++i]=RLENGTH
+        stack[i,0]="]"
+        sub(/-/, "[")
+      }
+      print
+      next
+    } 
+    /^[ \t]*("(\\.|[^"])*"|[^:]+):/ {
+      match($0, /^[ \t]*/)
+      while(stack[i]>RLENGTH) print stack[i--,0]      
+      if(stack[i]==RLENGTH) print ","
+      else {
+        stack[++i]=RLENGTH
+        stack[i,0]="}"
+        print "{"
+      }
+      print
+      next
+    }
+    1
+    END{
+      while(i) print stack[i--,0]
+    }
+  '
 }
 
 trapend() {
@@ -768,6 +852,8 @@ wheelie_usage() {
   ;; readvar)
     $echo "VARIABLE NAME"
   ;; jsondir)
+    $echo "[-s CHAR] [-n CHAR] DIR [JSON]"
+  ;; yamldir)
     $echo "[-s CHAR] [-n CHAR] DIR [JSON]"
   ;; withread)
     $echo "FILE COMMAND [ARG]..."

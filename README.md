@@ -206,7 +206,24 @@ dir/hash/array/1
 $ read x <dir/hash/array/1
 $ echo $x
 A
-$ rm -rf dir
+$ rm -rf dir json
+```
+
+### yamldir \[-s CHAR\] \[-n CHAR\] DIR \[JSON\]
+
+yaml形式のサブセットのデータを標準入力に受け取って
+データに対応するディレクトリ構成を作成する。
+使い方はjsondirを参照。
+
+```
+$ printf 'array : \n  - 1\n  - 2 \nhash:\n  array: [A, "B"] \n"num": 1' > yaml
+$ yamldir -n '\031' dir yaml
+$ grep -r . dir/
+dir/num:1
+dir/array/2:2
+dir/array/1:1
+dir/hash/array/2:B
+dir/hash/array/1:A
 ```
 
 ### withread FILE COMMAND \[ARG\]...
@@ -293,7 +310,7 @@ $ seq 1 3 | meet -m - $(seq 2 4|psub)
 3
 ```
 
-### prd FILE...
+### prd \[-s SEPARATOR\] FILE...
 
 集合の直積を取る。-sで区切り文字を指定する。
 
