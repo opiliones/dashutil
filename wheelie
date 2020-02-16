@@ -497,8 +497,8 @@ _jsondir() {
     function dump(x) {
       p=root
       for(i=1;i<j;i++) p=p path[i]"/"
-      if(x) print x  > p path[j]
-      else  print $0 > p path[j]
+      print x  > p path[j]
+      return 1
     }
     function get() {
       if((getline)<0) exit 1
@@ -508,21 +508,14 @@ _jsondir() {
       if(!t && !/^(true|false|null|[0-9.](e[-+][0-9]+)?)$|^"/) return 0
       if(/^:/) return 0
       if(/^"/) $0=substr($0,2)
-      else if(t) {
-        if(/^[],{}[]/) {
-          dump("null")
-          return 1
-        }
-      }
-      dump()
+      else if(t && /^[],{}[]/ && dump("null")) return 1
+      dump($0)
       return get()
     }
     function key() {
-      if(t) {if(/^[],{}:[]/) return 0}
-      else  if(!/^"/) return 0
+      if((!t && !/^"/) || /^[],{}:[]/) return 0
       if(/^"$/) $0="'"$_n_wh"'"
       if(/^"/) $0=substr($0,2)
-      else if(t) gsub(/^[ \t]|[ \t]$/, "")
       gsub(/\//,sl)
       path[++j]=$0
       if(get() && !/^:/) exit 1

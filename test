@@ -7,7 +7,7 @@ rm -f /tmp/out /tmp/exp
 compare() {
   [ -e /tmp/exp ] && [ -e /tmp/out ] && {
     echo "#### output compare"
-    diff /tmp/exp /tmp/out
+    diff -I '.[0-9]\+.' /tmp/exp /tmp/out
     rm -f /tmp/out /tmp/exp
   }
 }

@@ -61,9 +61,9 @@ $ pipestatus fuga 'exit 1' 'exit 2' true; echo $?; echo $fuga
 $ maybe echo a | lift echo b | lift echo c | decxt
 c
 $ maybe echoa | lift echo b | lift echo c | decxt
-echoa: コマンドが見つかりません
+./wheelie: 行 128: echoa: コマンドが見つかりません
 $ maybe echo a | lift echob | lift echo c | decxt
-echob: コマンドが見つかりません
+./wheelie: 行 128: echob: コマンドが見つかりません
 ```
 
 ### either COMMAND \[ARG\]...
@@ -81,10 +81,10 @@ COMMANDが正常復帰する場合はCOMMANDの標準出力を、
 $ either echo a | lift echo b | lift echo c | decxt
 c
 $ either echoa | lift echo b | lift echo c | decxt 
-echoa: コマンドが見つかりません
+./wheelie: 行 128: echoa: コマンドが見つかりません
 $ msg=`either echo a | lift echob | lift echo c | decxt 2>&1`
 $ echo "$msg"
-echob: コマンドが見つかりません
+./wheelie: 行 128: echob: コマンドが見つかりません
 ```
 
 ### lift COMMAND \[ARG\]...
@@ -110,10 +110,10 @@ COMMANDが実行されるかどうかと同じである。
 
 ```
 $ either echo a | noop echob | lift echo c | decxt
-echob: コマンドが見つかりません
+./wheelie: 行 128: echob: コマンドが見つかりません
 c
 $ either echoa | noop echo b | lift echo c | decxt
-echoa: コマンドが見つかりません
+./wheelie: 行 128: echoa: コマンドが見つかりません
 ```
 
 ### decxt
@@ -131,7 +131,7 @@ decxtの戻り値に相当する値が代入される。
 
 ```
 $ either echoa | noop echo b | lift echo c | { readcxt x; case $x in 0) cat - ;; *) echo "ERROR: command failed, ecode=$x, msg=$(cat)";; esac; }
-ERROR: command failed, ecode=127, msg=echoa: コマンドが見つかりません
+ERROR: command failed, ecode=127, msg=./wheelie: 行 128: echoa: コマンドが見つかりません
 ```
 
 ## リソース管理用のコマンド
