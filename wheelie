@@ -324,6 +324,13 @@ ifany() {
   } | "$@"
 }
 
+isany() {
+  local _x_wh
+  IFS= read -r _x_wh || return 1
+  printf '%s\n' "$_x_wh"
+  cat -
+}
+
 var() {
   case $1
   in *[!a-zA-Z0-9_]*)
@@ -532,8 +539,22 @@ trapend() {
 }
 
 ig() {
-  local _ret_wh=$?
+  local _ret_wh=$? _n_wh=
+  case $1
+  in --)
+    shift
+  ;; -e)
+    _n_wh=$2
+    shift 2
+  ;; -e*)
+    _n_wh=${1#-e}
+    shift
+  esac
+
   "$@"
+  case $? in $_n_wh)
+    return $?
+  esac
   return $_ret_wh
 }
 
@@ -635,60 +656,153 @@ getop() {
   return 0
 }
 
+dp() {
+  [ $# -le 2 ] && {
+    wheelie_usage dp
+    return
+  }
+  rot _dp "$@"
+}
+
+_dp() {
+  local _x_wh=$1
+  shift
+  : "$@"
+  "$@" "$_$_x_wh"
+}
+
+union() {
+  sort "$@" | uniq
+}
+
+meet() {
+  sort "$@" | uniq -d
+}
+
+exc() {
+  local _opt_wh=
+  while :; do 
+    case $1
+    in --) shift
+           break
+    ;; -)  break
+    ;; -*) _opt_wh="$_opt_wh $1"
+           shift
+    ;; *)  break
+    esac
+  done
+
+  sort $_opt_wh "$1" \
+    $(shift; sort $_opt_wh "$@" | sed p | psub) |
+    uniq -u
+}
+
+prd() {
+  local _s_wh=
+  case $1
+  in --)  shift
+  ;; -s)  _s_wh=$2
+          shift 2
+  ;; -s*) _s_wh=${1#-s}
+          shift 1
+  esac
+
+  case $#
+  in 0|1) wheelie_usage prd
+          return 1
+  ;; *)   _prd "$@"
+  esac
+}
+
+_prd() {
+  case $#
+  in 2) __prd "$@"
+  ;; *) __prd "$1" "$2" | {
+          shift 2
+          _prd - "$@"
+        }
+  esac
+}
+
+__prd() {
+    awk -v s="$_s_wh" '
+      BEGIN {
+        while(getline < ARGV[2]) a[++i]=$0
+        while(getline < ARGV[1]) for(j=1;j<=i;j++) print $0 s a[j]
+      }' "$1" "$2"
+}
+
+sdiff() {
+  sort "$@" | uniq -u
+}
+
 wheelie_usage() {
+  local echo="echo Usage: $1"
   case $1
   in psub)
-    echo "Usage: psub"
+    $echo
   ;; qee)
-    echo "Usage: qee QUOTED..."
+    $echo "QUOTED..."
   ;; pipe)
-    echo "Usage: pipe [-r|-l] QUOTED..."
+    $echo "[-r|-l] QUOTED..."
   ;; pipestatus)
-    echo "Usage: pipestatus VARIABLE QUOTED..."
+    $echo "VARIABLE QUOTED..."
   ;; maybe)
-    echo "Usage: maybe COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; either)
-    echo "Usage: either COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; lift)
-    echo "Usage: lift COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; noop)
-    echo "Usage: noop COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; decxt)
-    echo "Usage: decxt"
+    $echo
   ;; readcxt)
-    echo "Usage: readcxt VARIABLE..."
+    $echo "VARIABLE..."
   ;; tmpf)
-    echo "Usage: tmpf COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; var)
-    echo "Usage: var NAME VALUE"
+    $echo "NAME VALUE"
   ;; withvar)
-    echo "Usage: withvar VARIABLE COMMMAND [ARG]..."
+    $echo "VARIABLE COMMMAND [ARG]..."
   ;; readvar)
-    echo "Usage: readvar VARIABLE NAME"
+    $echo "VARIABLE NAME"
   ;; jsondir)
-    echo "Usage: jsondir [-s CHAR] [-n CHAR] DIR [JSON]"
+    $echo "[-s CHAR] [-n CHAR] DIR [JSON]"
   ;; withread)
-    echo "Usage: withread FILE COMMAND [ARG]..."
+    $echo "FILE COMMAND [ARG]..."
   ;; fval)
-    echo "Usage: fval QUOTED [ARG]..."
+    $echo "QUOTED [ARG]..."
   ;; quote)
-    echo "Usage: quote VARIABLE STRING..."
+    $echo "VARIABLE STRING..."
   ;; rot)
-    echo "Usage: rot COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; rotn)
-    echo "Usage: rotn NUMBER COMMAND [ARG]..."
+    $echo "NUMBER COMMAND [ARG]..."
   ;; ifany)
-    echo "Usage: ifany [-n ERRNO] COMMAND [ARG]..."
+    $echo "[-n ERRNO] COMMAND [ARG]..."
   ;; null)
-    echo "Usage: null COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; enull)
-    echo "Usage: enull COMMAND [ARG]..."
+    $echo "COMMAND [ARG]..."
   ;; trapend)
-    echo "Usage: trapend QUOTED"
+    $echo "[QUOTED]"
   ;; ig)
-    echo "Usage: ig COMMAND [ARG]..."
+    $echo "[-e ECODE] COMMAND [ARG]..."
   ;; substr)
-    echo "Usage: substr VARIABLE STRING OFFSET [LENGTH]"
+    $echo "VARIABLE STRING OFFSET [LENGTH]"
+  ;; dp)
+    $echo "COMMAND ARG... POSTFIX"
+  ;; union)
+    $echo "[-m] FILE..." 
+  ;; meet)
+    $echo "[-m] FILE..."
+  ;; exc)
+    $echo "[-m] FILE..."
+  ;; prd)
+    $echo "[-s SEPARATOR] FILE..."
+  ;; sdiff)
+    $echo "[-m] FILE..."
   esac
   return 1
 } >&2

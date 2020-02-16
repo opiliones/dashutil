@@ -260,6 +260,67 @@ $ rotn 2 echo 1 2 3
 2 3 1
 ```
 
+## 集合演算
+
+### union [-m] FILE...
+
+集合の和を取る。FILEが同じ規則でソート済の場合は-mを指定する。
+
+```
+$ seq 1 3 | union -m - $(seq 2 4|psub)
+1
+2
+3
+4
+```
+
+### exc [-m] FILE...
+
+集合の差を取る。FILEが同じ規則でソート済の場合は-mを指定する。
+
+```
+$ seq 1 3 | exc -m - $(seq 2 4|psub)
+1
+```
+
+### meet [-m] FILE...
+
+集合の積を取る。FILEが同じ規則でソート済の場合は-mを指定する。
+
+```
+$ seq 1 3 | meet -m - $(seq 2 4|psub)
+2
+3
+```
+
+### prd FILE...
+
+集合の直積を取る。-sで区切り文字を指定する。
+
+```
+$ seq 1 3 | prd -s " " - $(seq 2 4|psub)
+1 2
+1 3
+1 4
+2 2
+2 3
+2 4
+3 2
+3 3
+3 4
+```
+
+### sdiff [-m] FILE...
+
+各集合にしか含まれない要素だけからなる集合を取り出す。
+FILEが同じ規則でソート済の場合は-mを指定する。
+
+```
+$ seq 1 3 | sdiff -m - $(seq 2 4|psub)
+1
+4
+```
+
 ## その他
 
 ### ifany \[-n ERRNO\] COMMAND \[ARG\]...
@@ -273,6 +334,18 @@ moreutilのifneと同じ。
 $ : | ifany -n 1 echo a
 $ echo $?
 1
+```
+
+### isany
+
+標準入力がない場合は1で復帰する。
+
+```
+$ : | isany; echo $?
+1
+$ echo a | isany; echo $?
+a
+0
 ```
 
 ### null COMMAND \[ARG\]...
@@ -314,6 +387,16 @@ $ substr x 12345 2 2
 $ echo $x
 23
 ```
+
+### dp COMMAND ARG... POSTFIX
+
+ARGの最後の1つを複製し、POSTFIXをつけて実行する。
+
+```
+$ dp echo file .back
+file file.back
+```
+
 ### getop OPTSTRING \[ARG\]...
 
 getoptsの第二引数をOPT固定にし、静かなモード限定にしたもの。
