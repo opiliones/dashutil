@@ -224,7 +224,7 @@ dir/array/2:2
 dir/array/1:1
 dir/hash/array/2:B
 dir/hash/array/1:A
-$ rm -rf dir
+$ rm -rf dir yaml
 ```
 
 なお、以下の要素はサポートされていない。
