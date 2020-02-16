@@ -216,7 +216,7 @@ yaml形式のサブセットのデータを標準入力に受け取って
 使い方はjsondirを参照。
 
 ```
-$ printf 'array : \n  - 1\n  - 2 \nhash:\n  array: [A, "B"] \n"num": 1' > yaml
+$ printf '#comment\narray : \n  - 1\n  - 2 \nhash:\n  array: [A, "B"] \n"num": 1' > yaml
 $ yamldir -n '\031' dir yaml
 $ grep -r . dir/
 dir/num:1
@@ -224,7 +224,14 @@ dir/array/2:2
 dir/array/1:1
 dir/hash/array/2:B
 dir/hash/array/1:A
+$ rm -rf dir
 ```
+
+なお、以下の要素はサポートされていない。
+
+- シングルクォート
+- アンカーとエイリアス
+- 複数行の文字列
 
 ### withread FILE COMMAND \[ARG\]...
 
