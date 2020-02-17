@@ -171,7 +171,7 @@ $ for i in 1 2 3 4; do withvar hoge$i echo; done
 
 VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
 
-### readvar VARIABLE NAME
+### readvar VARIABLE NAME \[VALUE\]
 
 変数名がNAMEである変数の値をVARIABLEに代入する。
 
@@ -181,6 +181,16 @@ $ n=1
 $ readvar b a$n
 $ echo $b
 hoge
+```
+
+醜いが第3引数以降に位置パラメタを渡すことで
+動的に位置パラメタを代入できる。
+
+```
+$ set a b c
+$ readvar x 2 "$@"
+$ echo $x
+b
 ```
 
 ## 再帰的データ
