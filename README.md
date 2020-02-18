@@ -4,7 +4,7 @@ dashを少しだけ便利にする車輪の再発明utility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### qsub
+### qsub COMMAND \[ARG\]...
 
 bashのプロセス置換(read)に対応するコマンド。
 
