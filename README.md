@@ -158,6 +158,19 @@ $ (trapend 'echo a')
 a
 ```
 
+### dam FILE
+
+一時ファイルに書き出してからFILEに変名します。
+
+```
+$ seq 1 10 > out
+$ grep ^1 out | dam out
+$ cat out
+1
+10
+$ rm out
+```
+
 ## 動的変数
 
 ### var NAME VALUE

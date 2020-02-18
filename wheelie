@@ -262,6 +262,12 @@ tmpf() {
   "
 }
 
+dam() {
+  local _f_wh=$(mktemp)
+  cat - >$_f_wh
+  mv -f $_f_wh $1
+}
+
 rot() {
   local _f_wh=$1 _n_wh=$#
   shift
@@ -835,6 +841,8 @@ wheelie_usage() {
     $echo "VARIABLE..."
   ;; tmpf)
     $echo "COMMAND [ARG]..."
+  ;; dam)
+    $echo "FILE"
   ;; var)
     $echo "NAME VALUE"
   ;; withvar)
