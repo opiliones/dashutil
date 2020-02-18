@@ -4,17 +4,22 @@ dashを少しだけ便利にする車輪の再発明utility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### psub
+### qsub
 
-fishのpsubと同じ。
 bashのプロセス置換(read)に対応するコマンド。
 
 ```
-$ diff $(echo a | psub) $(echo b | psub)
+$ diff $(qsub echo a) $(qsub echo b)
 1c1
 < a
 ---
 > b
+$ cat $(qsub eval 'echo a | sed p')
+a
+a
+$ set 1 2 3
+$ cat $(qsub fval 'echo $2' "$@")
+2
 ```
 ### qee QUOTED...
 
@@ -296,12 +301,25 @@ $ rotn 2 echo 1 2 3
 
 ## 集合演算
 
-### union [-m] FILE...
+ソート済重複なしのファイルを使って集合演算をする。
 
-集合の和を取る。FILEが同じ規則でソート済の場合は-mを指定する。
+### toset FILE...
+
+`sort | uniq`と同等。
 
 ```
-$ seq 1 3 | union -m - $(seq 2 4|psub)
+$ printf '%s\n' 1 a " a b" 1 | toset
+ a b
+1
+a
+```
+
+### union [-m] FILE...
+
+集合の和を取る。
+
+```
+$ seq 1 3 | union - $(qsub seq 2 4)
 1
 2
 3
@@ -310,19 +328,19 @@ $ seq 1 3 | union -m - $(seq 2 4|psub)
 
 ### exc [-m] FILE...
 
-集合の差を取る。FILEが同じ規則でソート済の場合は-mを指定する。
+集合の差を取る。
 
 ```
-$ seq 1 3 | exc -m - $(seq 2 4|psub)
+$ seq 1 3 | exc - $(qsub seq 2 4)
 1
 ```
 
 ### meet [-m] FILE...
 
-集合の積を取る。FILEが同じ規則でソート済の場合は-mを指定する。
+集合の積を取る。
 
 ```
-$ seq 1 3 | meet -m - $(seq 2 4|psub)
+$ seq 1 3 | meet - $(qsub seq 2 4)
 2
 3
 ```
@@ -332,7 +350,7 @@ $ seq 1 3 | meet -m - $(seq 2 4|psub)
 集合の直積を取る。-sで区切り文字を指定する。
 
 ```
-$ seq 1 3 | prd -s " " - $(seq 2 4|psub)
+$ seq 1 3 | prd -s " " - $(qsub seq 2 4)
 1 2
 1 3
 1 4
@@ -347,10 +365,9 @@ $ seq 1 3 | prd -s " " - $(seq 2 4|psub)
 ### sdiff [-m] FILE...
 
 各集合にしか含まれない要素だけからなる集合を取り出す。
-FILEが同じ規則でソート済の場合は-mを指定する。
 
 ```
-$ seq 1 3 | sdiff -m - $(seq 2 4|psub)
+$ seq 1 3 | sdiff - $(qsub seq 2 4)
 1
 4
 ```

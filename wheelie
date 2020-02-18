@@ -12,16 +12,17 @@ command -v mktemp >/dev/null 2>&1 || {
   }
 } 
 
-psub() {
+qsub() (
+  local _f_wh
   while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
-  local _f_wh=/tmp/wheelie.pipe.$$.$_WHL_N
+  _f_wh=/tmp/wheelie.pipe.$$.$_WHL_N
 
   mkfifo $_f_wh || return
   echo $_f_wh
   ( trap 'rm -f $_f_wh' 0 1 2 5 15
-    exec >&- 
-    cat - >$_f_wh ) &
-}
+    exec >&-
+    "$@"  >$_f_wh) &
+)
 
 qee() (
   while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
@@ -750,30 +751,24 @@ _dp() {
   "$@" "$_$_x_wh"
 }
 
+toset() {
+  sort | uniq
+}
+
 union() {
-  sort "$@" | uniq
+  sort -m -- "$@" | uniq
 }
 
 meet() {
-  sort "$@" | uniq -d
+  sort -m -- "$@" | uniq -d
 }
 
 exc() {
-  local _opt_wh=
-  while :; do 
-    case $1
-    in --) shift
-           break
-    ;; -)  break
-    ;; -*) _opt_wh="$_opt_wh $1"
-           shift
-    ;; *)  break
-    esac
-  done
+  sort -m -- "$1" $(shift; qsub _exc_dup "$@") | uniq -u
+}
 
-  sort $_opt_wh "$1" \
-    $(shift; sort $_opt_wh "$@" | sed p | psub) |
-    uniq -u
+_exc_dup() {
+  sort -m -- "$@" | sed p
 }
 
 prd() {
@@ -812,14 +807,14 @@ __prd() {
 }
 
 sdiff() {
-  sort "$@" | uniq -u
+  sort -m -- "$@" | uniq -u
 }
 
 wheelie_usage() {
   local echo="echo Usage: $1"
   case $1
-  in psub)
-    $echo
+  in qsub)
+    $echo "COMMAND [ARG]..."
   ;; qee)
     $echo "QUOTED..."
   ;; pipe)
@@ -874,16 +869,18 @@ wheelie_usage() {
     $echo "VARIABLE STRING OFFSET [LENGTH]"
   ;; dp)
     $echo "COMMAND ARG... POSTFIX"
+  ;; toset)
+    $echo "FILE..." 
   ;; union)
-    $echo "[-m] FILE..." 
+    $echo "FILE..." 
   ;; meet)
-    $echo "[-m] FILE..."
+    $echo "FILE..."
   ;; exc)
-    $echo "[-m] FILE..."
+    $echo "FILE..."
   ;; prd)
     $echo "[-s SEPARATOR] FILE..."
   ;; sdiff)
-    $echo "[-m] FILE..."
+    $echo "FILE..."
   esac
   return 1
 } >&2
