@@ -632,7 +632,7 @@ ig() {
   esac
 
   "$@"
-  case $? in $_n_wh)
+  case $_n_wh in $?,*|*,$?,*|*,$?)
     return $?
   esac
   return $_ret_wh
@@ -864,7 +864,7 @@ wheelie_usage() {
   ;; trapend)
     $echo "[QUOTED]"
   ;; ig)
-    $echo "[-e ECODE] COMMAND [ARG]..."
+    $echo "[-e ECODE[,ECODE]...] COMMAND [ARG]..."
   ;; substr)
     $echo "VARIABLE STRING OFFSET [LENGTH]"
   ;; dp)

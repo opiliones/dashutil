@@ -420,13 +420,16 @@ $ enull eco a
 $
 ```
 
-### ig COMMAND \[ARG\]...
+### ig \[-e ECODE\[,ECODE\]...\] COMMAND \[ARG\]...
 
 復帰値を前のコマンドから変更しない。
+例外を-eオプションで指定できる。
 
 ```
 $ :; ig false; echo $?
 0
+$ :; ig -e 2,3,4 eval '(exit 3)'; echo $?
+3
 ```
 
 ### substr VARIABLE STRING OFFSET \[LENGTH\]
