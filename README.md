@@ -314,7 +314,7 @@ $ printf '%s\n' 1 a " a b" 1 | toset
 a
 ```
 
-### union [-m] FILE...
+### union FILE...
 
 集合の和を取る。
 
@@ -326,7 +326,7 @@ $ seq 1 3 | union - $(qsub seq 2 4)
 4
 ```
 
-### exc [-m] FILE...
+### exc FILE...
 
 集合の差を取る。
 
@@ -335,7 +335,7 @@ $ seq 1 3 | exc - $(qsub seq 2 4)
 1
 ```
 
-### meet [-m] FILE...
+### meet FILE...
 
 集合の積を取る。
 
@@ -348,6 +348,7 @@ $ seq 1 3 | meet - $(qsub seq 2 4)
 ### prd \[-s SEPARATOR\] FILE...
 
 集合の直積を取る。-sで区切り文字を指定する。
+ソート済でなくとも重複ありでも良い。
 
 ```
 $ seq 1 3 | prd -s " " - $(qsub seq 2 4)
@@ -362,7 +363,7 @@ $ seq 1 3 | prd -s " " - $(qsub seq 2 4)
 3 4
 ```
 
-### sdiff [-m] FILE...
+### sdiff FILE...
 
 各集合にしか含まれない要素だけからなる集合を取り出す。
 
