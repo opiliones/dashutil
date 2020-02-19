@@ -167,7 +167,7 @@ a
 ### dam FILE
 
 標準入力を一時ファイルに書き出してからFILEに変名する。
-moreitilのspongeのような動作。
+moreutilのspongeのような動作。
 
 ```
 $ seq 1 10 > out
