@@ -13,7 +13,21 @@ command -v mktemp >/dev/null 2>&1 || {
 } 
 
 qsub() (
-  local _f_wh
+  local _f_wh _i_wh
+  case $1
+  in -q)
+    shift
+    for _i_wh in "$@"; do
+      qsub eval "$_i_wh"
+    done
+    return
+  ;; "")
+    tmpf _qsub_f 
+    return
+  ;; --)
+    shift
+  esac
+ 
   while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
   _f_wh=/tmp/wheelie.pipe.$$.$_WHL_N
 
@@ -24,24 +38,45 @@ qsub() (
     "$@"  >$_f_wh) &
 )
 
+_qsub_f() {
+  cat - > $1
+  qsub cat $1
+}
+
 qee() (
-  while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
-  local _f_wh=/tmp/wheelie.pipe.$$.$_WHL_N
-
+  local _i_wh _f_wh _t_wh
   trap 'rm -f $_f_wh' 0 1 2 5 15
-  mkfifo $_f_wh || return
 
-  eval "$1" <$_f_wh &
-  case $#
-  in 0|1)
-    tee $_f_wh 
+  case $1
+  in -q)
+    shift
+    for _i_wh in "$@";  do
+      while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
+      _t_wh="/tmp/wheelie.pipe.$$.$_WHL_N"
+      _f_wh="$_f_wh $_t_wh"
+
+      mkfifo $_t_wh || return
+
+      eval "$_i_wh" <$_t_wh &
+    done
   ;; *)
-    tee $_f_wh | {
+    case $1 in --)
       shift
-      qee "$@"
-    }
+    esac
+    while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
+    _f_wh="$_f_wh /tmp/wheelie.pipe.$$.$_WHL_N"
+    mkfifo $_f_wh || return
+    "$@" <$_f_wh &
   esac
+
+  tee $_f_wh
 )
+
+_qee_q() {
+  local _i_wh _f_wh
+
+  tee $_f_wh
+}
 
 pipe() {
   local _opt_wh= _ret1_wh _ret2_wh 
@@ -820,9 +855,9 @@ wheelie_usage() {
   local echo="echo Usage: $1"
   case $1
   in qsub)
-    $echo "COMMAND [ARG]..."
+    $echo "[{COMMAND [ARG]...|-q QUOTED...}]"
   ;; qee)
-    $echo "QUOTED..."
+    $echo "{COMMAND [ARG]...|-q QUOTED...}"
   ;; pipe)
     $echo "[-r|-l] QUOTED..."
   ;; pipestatus)

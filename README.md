@@ -9,7 +9,7 @@ dashを少しだけ便利にする車輪の再発明utility
 bashのプロセス置換(read)に対応するコマンド。
 
 ```
-$ diff $(qsub echo a) $(qsub echo b)
+$ diff $(qsub -q 'echo a' 'echo b')
 1c1
 < a
 ---
@@ -20,13 +20,19 @@ a
 $ set 1 2 3
 $ cat $(qsub fval 'echo $2' "$@")
 2
+$ cat $(echo a | qsub)
+a
 ```
 ### qee QUOTED...
 
 bashのプロセス置換(write)に対応するコマンド。
 moreutilのpee。
 ```
-$ echo a | qee 'tr a c' | tr a b
+$ echo a | qee tr a c | tr a b
+b
+c
+$ echo a | qee -q 'tr a c' 'tr a b'
+a
 b
 c
 ```
