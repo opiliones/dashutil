@@ -4,7 +4,7 @@ dashを少しだけ便利にする車輪の再発明utility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### qsub [{COMMAND \[ARG\]...|-q QUOTED...}]
+### qsub \[{COMMAND \[ARG\]...|-q QUOTED...}\]
 
 bashのプロセス置換(read)に対応するコマンド。
 
@@ -166,7 +166,8 @@ a
 
 ### dam FILE
 
-一時ファイルに書き出してからFILEに変名します。
+標準入力を一時ファイルに書き出してからFILEに変名する。
+moreitilのspongeのような動作。
 
 ```
 $ seq 1 10 > out
