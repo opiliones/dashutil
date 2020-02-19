@@ -4,7 +4,7 @@ dashを少しだけ便利にする車輪の再発明utility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### qsub COMMAND \[ARG\]...
+### qsub [{COMMAND \[ARG\]...|-q QUOTED...}]
 
 bashのプロセス置換(read)に対応するコマンド。
 
@@ -23,7 +23,7 @@ $ cat $(qsub fval 'echo $2' "$@")
 $ cat $(echo a | qsub)
 a
 ```
-### qee QUOTED...
+### qee {COMMAND \[ARG\]...|-q QUOTED...}
 
 bashのプロセス置換(write)に対応するコマンド。
 moreutilのpee。
