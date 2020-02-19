@@ -192,9 +192,9 @@ $ for i in 1 2 3 4; do withvar hoge$i echo; done
 3
 4
 ```
-### withvar VARIABLE COMMMAND \[ARG\]...
+### withvar VARIABLE COMMAND \[ARG\]...
 
-VARIABLEの値をCOMMMANDの最終引数に渡して実行する。
+VARIABLEの値をCOMMANDの最終引数に渡して実行する。
 
 ### readvar VARIABLE NAME \[VALUE\]
 
