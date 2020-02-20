@@ -851,6 +851,14 @@ sdiff() {
   sort -m -- "$@" | uniq -u
 }
 
+exists() {
+  case $1 in *[!a-zA-Z0-9_]*)
+    return 1
+  esac
+
+  eval "! [ -z \${$1+_} ]"
+}
+
 wheelie_usage() {
   local echo="echo Usage: $1"
   case $1
@@ -924,6 +932,8 @@ wheelie_usage() {
     $echo "[-s SEPARATOR] FILE..."
   ;; sdiff)
     $echo "FILE..."
+  ;; exists)
+    $echo "VARIABLE"
   esac
   return 1
 } >&2

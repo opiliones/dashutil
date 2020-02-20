@@ -496,3 +496,16 @@ OPTARG=arg
 $ echo $OPTIND
 6
 ```
+
+### exists VARIABLE
+
+VARIABLEが定義済なら正常復帰する。
+
+```
+$ unset x
+$ exists x || echo hoge
+hoge
+$ x=1
+$ exists x && echo fuga
+fuga
+```
