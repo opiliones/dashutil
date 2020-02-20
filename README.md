@@ -7,6 +7,7 @@ dashを少しだけ便利にする車輪の再発明utility
 ### qsub \[{COMMAND \[ARG\]...|-q QUOTED...}\]
 
 bashのプロセス置換(read)に対応するコマンド。
+引数なしで実行した場合、fishのpsub -fに似た操作をする。
 
 ```
 $ diff $(qsub -q 'echo a' 'echo b')
@@ -26,7 +27,8 @@ a
 ### qee {COMMAND \[ARG\]...|-q QUOTED...}
 
 bashのプロセス置換(write)に対応するコマンド。
-moreutilのpee。
+moreutilのpeeに近い何か。
+
 ```
 $ echo a | qee tr a c | tr a b
 b
@@ -58,6 +60,20 @@ $ pipe 'exit 1' 'exit 2' true; echo $?
 $ pipestatus fuga 'exit 1' 'exit 2' true; echo $?; echo $fuga
 0
 1 2 0
+```
+
+### dam FILE
+
+標準入力を一時ファイルに書き出してからFILEに変名する。
+moreutilのspongeのような動作。
+
+```
+$ seq 1 10 > out
+$ grep ^1 out | dam out
+$ cat out
+1
+10
+$ rm out
 ```
 
 ### maybe COMMAND \[ARG\]...
@@ -162,20 +178,6 @@ a
 ```
 $ (trapend 'echo a')
 a
-```
-
-### dam FILE
-
-標準入力を一時ファイルに書き出してからFILEに変名する。
-moreutilのspongeのような動作。
-
-```
-$ seq 1 10 > out
-$ grep ^1 out | dam out
-$ cat out
-1
-10
-$ rm out
 ```
 
 ## 動的変数
