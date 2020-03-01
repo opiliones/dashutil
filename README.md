@@ -7,7 +7,7 @@ dashを少しだけ便利にする車輪の再発明utility
 ### qsub \[{COMMAND \[ARG\]...|-q QUOTED...}\]
 
 bashのプロセス置換(read)に対応するコマンド。
-引数なしで実行した場合、fishのpsub -fに似た操作をする。
+引数なしで実行した場合、fishのpsub -fに似た動作をする。
 
 ```
 $ diff $(qsub -q 'echo a' 'echo b')
