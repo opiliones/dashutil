@@ -465,12 +465,12 @@ $ echo $x
 23
 ```
 
-### dp COMMAND ARG... POSTFIX
+### dp COMMAND ARG... POSTFIX[,POSTFIX...]
 
 ARGの最後の1つを複製し、POSTFIXをつけて実行する。
 
 ```
-$ dp echo file .back
+$ dp echo file ,.back
 file file.back
 ```
 

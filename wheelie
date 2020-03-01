@@ -782,14 +782,19 @@ dp() {
     wheelie_usage dp
     return
   }
-  rot _dp "$@"
+  rotn 2 _dp "$@"
 }
 
 _dp() {
-  local _x_wh=$1
-  shift
-  : "$@"
-  "$@" "$_$_x_wh"
+  local _x_wh=$1 _y_wh=$2, _i_wh _ofs_wh=$IFS IFS=,
+  shift 2
+  set -f
+  for _i_wh in $_y_wh; do
+    set -- "$@" "$_x_wh$_i_wh"
+  done
+  set +f
+  local IFS=$_ofs_wh
+  "$@"
 }
 
 toset() {
@@ -919,7 +924,7 @@ wheelie_usage() {
   ;; substr)
     $echo "VARIABLE STRING OFFSET [LENGTH]"
   ;; dp)
-    $echo "COMMAND ARG... POSTFIX"
+    $echo "COMMAND ARG... POSTFIX[,POSTFIX...]"
   ;; toset)
     $echo "FILE..." 
   ;; union)
