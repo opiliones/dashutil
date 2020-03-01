@@ -322,7 +322,7 @@ def_take_n() {
 take() {
   local _n_wh=$1
   shift
-  _type_wh "take$_n_wh" >/dev/null 2>&1 || def_take_n $_n_wh
+  type "take$_n_wh" >/dev/null 2>&1 || def_take_n $_n_wh
   "take$_n_wh" "$@"
 }
 
@@ -786,13 +786,16 @@ dp() {
 }
 
 _dp() {
-  local _x_wh=$1 _y_wh=$2, _i_wh _ofs_wh=$IFS IFS=,
+  local _x_wh=$1 _y_wh=$2, _i_wh _ofs_wh=$IFS IFS=, _f_wh=false
   shift 2
-  set -f
+  [ .[.] = .. ] && {
+    _f_wh=true
+    set -f
+  }
   for _i_wh in $_y_wh; do
     set -- "$@" "$_x_wh$_i_wh"
   done
-  set +f
+  $_f_wh && set +f
   local IFS=$_ofs_wh
   "$@"
 }
