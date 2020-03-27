@@ -188,7 +188,7 @@ a
 ```
 ### trapend [QUOTED]
 
-`trap QUOTED 0 1 2 3 15`と同義
+`trap "ret=$?; QUOTED; exit $ret" 0 1 2 3 15`と同義
 
 ```
 $ (trapend 'echo a')

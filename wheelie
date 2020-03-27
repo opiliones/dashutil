@@ -56,7 +56,6 @@ qee() (
       _f_wh="$_f_wh $_t_wh"
 
       mkfifo $_t_wh || return
-
       eval "$_i_wh" <$_t_wh &
     done
   ;; *)
@@ -64,7 +63,7 @@ qee() (
       shift
     esac
     while test -e /tmp/wheelie.pipe.$$.$((_WHL_N+=1)); do :; done
-    _f_wh="$_f_wh /tmp/wheelie.pipe.$$.$_WHL_N"
+    _f_wh="/tmp/wheelie.pipe.$$.$_WHL_N"
     mkfifo $_f_wh || return
     "$@" <$_f_wh &
   esac
@@ -654,7 +653,7 @@ _block_to_flow() {
 trapend() {
   case $#
   in 0) trap  0 1 2 3 15
-  ;; 1) trap "$1" 0 1 2 3 15
+  ;; 1) trap "_ret_wh=\$?;$1;exit \$_ret_wh" 0 1 2 3 15
   ;; *) wheelie_usage trapend
   esac
 }
