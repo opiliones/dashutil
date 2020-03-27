@@ -2,6 +2,21 @@
 
 dashを少しだけ便利にする車輪の再発明utility
 
+## bash拡張との対応表
+
+|bash|dash with wheelie|
+|----|-------|
+|cat <(echo a)|cat $(qsub echo a) |
+|tee >(cat >file)|qee 'cat >file'|
+|set -o pipefail<br>false &#124; true| pipe -r false true|
+|false &#124; true<br>echo $PIPESTATUS|pipestatus LIST false true<br>echo $LIST|
+|printf -v x '%q' ...|quote x ...|
+|mv file{,.bk}|dp mv file ,.bk|
+|test -v x|exists x|
+|() {echo \$((\$1*$1))} 1 |fval 'echo \$((\$1*$1))' 1|
+|a[$i]=1|var a\$i 1|
+|echo a[$i]|withvar a$i echo|
+
 ## 一時ファイルを作りたくない人向けのコマンド
 
 ### qsub \[{COMMAND \[ARG\]...|-q QUOTED...}\]
