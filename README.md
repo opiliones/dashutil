@@ -19,7 +19,7 @@ dashを少しだけ便利にする車輪の再発明utility
 
 ## 一時ファイルを作りたくない人向けのコマンド
 
-### qsub \[{COMMAND \[ARG\]...|-q QUOTED...}\]
+### qsub \[COMMAND \[ARG\]...|-q QUOTED...\]
 
 bashのプロセス置換(read)に対応するコマンド。
 引数なしで実行した場合、fishのpsub -fに似た動作をする。

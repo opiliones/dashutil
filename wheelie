@@ -870,7 +870,7 @@ wheelie_usage() {
   local echo="echo Usage: $1"
   case $1
   in qsub)
-    $echo "[{COMMAND [ARG]...|-q QUOTED...}]"
+    $echo "[COMMAND [ARG]...|-q QUOTED...]"
   ;; qee)
     $echo "{COMMAND [ARG]...|-q QUOTED...}"
   ;; pipe)
