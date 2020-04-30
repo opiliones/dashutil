@@ -342,6 +342,10 @@ fval() {
   eval "shift; $1"
 }
 
+gval() {
+  eval "$1"
+}
+
 null() {
   "$@" >/dev/null 2>&1
 }
@@ -910,7 +914,7 @@ wheelie_usage() {
     $echo "[-s CHAR] [-n CHAR] DIR [JSON]"
   ;; withread)
     $echo "FILE COMMAND [ARG]..."
-  ;; fval)
+  ;; fval|gval)
     $echo "QUOTED [ARG]..."
   ;; quote)
     $echo "VARIABLE STRING..."
