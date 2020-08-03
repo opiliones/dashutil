@@ -373,7 +373,7 @@ ifany() {
 isany() {
   local _x_wh
   IFS= read -r _x_wh || return 1
-  printf '%s\n' "$_x_wh"
+  printf -- '%s\n' "$_x_wh"
   cat -
 }
 
@@ -518,7 +518,7 @@ yamldir() {
 
 _jsondir() {
   awk '
-    BEGIN{RS=""}
+    BEGIN{RS=sprintf("%c", 0)}
     {
       while(match($0,/"(\\.|[^"])*"/)) {
         printf("%s", substr($0, 1, RSTART-1))
